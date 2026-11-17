@@ -12,7 +12,10 @@ export default defineConfig({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
-			adapter: adapter()
+			adapter: adapter(),
+			// Kit's origin check compares schemes and adapter-node assumes https, which would reject
+			// every form POST on a plain-http LAN. src/lib/server/auth/origin.ts checks the host instead.
+			csrf: { trustedOrigins: ['*'] }
 		})
 	],
 	test: {

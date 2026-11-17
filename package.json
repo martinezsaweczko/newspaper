@@ -17,7 +17,10 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"test:unit": "vitest",
-		"test": "npm run test:unit -- --run"
+		"test": "npm run test:unit -- --run",
+		"user:add": "node scripts/user.ts add",
+		"user:remove": "node scripts/user.ts remove",
+		"samples": "node scripts/make-samples.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
@@ -42,5 +45,8 @@
 		"typescript-eslint": "^8.72.2",
 		"vite": "^8.3.8",
 		"vitest": "^5.1.0"
+	},
+	"engines": {
+		"node": ">=24"
 	}
 }
