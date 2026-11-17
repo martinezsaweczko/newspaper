@@ -1,0 +1,31 @@
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# App data (users, thumbnails, regions.json) and the shared folder's PDFs
+/data/
+newspapers/**/*.pdf
+
+# Local tooling
+.claude/
+.taste-skill/

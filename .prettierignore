@@ -1,0 +1,17 @@
+# Package Managers
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lock
+bun.lockb
+
+# Miscellaneous
+/static/
+
+# Not ours to reformat
+CLAUDE.md
+odd/
+skills-lock.json
+newspapers/
+data/
+.taste-skill/
