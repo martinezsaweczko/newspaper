@@ -1,0 +1,12 @@
+node_modules
+build
+.svelte-kit
+data
+newspapers
+.env
+.env.*
+!.env.example
+.git
+.claude
+.taste-skill
+odd

@@ -1,0 +1,23 @@
+# podman compose up -d   (or docker compose up -d)
+# Configure in .env (see .env.example). Add users with:
+#   podman compose exec newspaper npm run user:add -- <name>
+services:
+  newspaper:
+    build: .
+    image: ${NEWSPAPER_IMAGE:-localhost/newspaper:latest}
+    restart: unless-stopped
+    ports:
+      - '${NEWSPAPER_PORT:-3000}:3000'
+    environment:
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env (32+ random characters)}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      # behind a reverse proxy that sets X-Forwarded-For, uncomment:
+      # ADDRESS_HEADER: X-Forwarded-For
+    volumes:
+      # the shared folder of PDFs, read-only
+      - ${NEWSPAPER_HOST_DIR:-./newspapers}:/newspapers:ro
+      # users.json, regions.json and the front-page cache
+      - newspaper-data:/data
+
+volumes:
+  newspaper-data:
