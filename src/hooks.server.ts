@@ -2,7 +2,7 @@ import { building } from '$app/env';
 import { users } from '#lib/server/auth/index.ts';
 import { isCrossSiteForm } from '#lib/server/auth/origin.ts';
 import { SESSION_COOKIE, verifySession } from '#lib/server/auth/session.ts';
-import { config, sessionSecret } from '#lib/server/config.ts';
+import { config, DEV_USER, sessionSecret } from '#lib/server/config.ts';
 import { seedRegionsFile } from '#lib/server/library/regions.ts';
 import type { Handle, ServerInit } from '@sveltejs/kit/hooks';
 import { mkdirSync } from 'node:fs';
@@ -26,6 +26,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	const session = verifySession(event.cookies.get(SESSION_COOKIE), sessionSecret());
 	event.locals.user = session && users.has(session.user) ? session.user : null;
+	if (!event.locals.user && config.authDisabled) event.locals.user = DEV_USER;
 
 	const { pathname, search } = event.url;
 	if (!event.locals.user && !isPublic(pathname)) {

@@ -19,5 +19,10 @@ export const variables = defineEnvVars({
 	COOKIE_SECURE: {
 		description: 'Set to "true" behind https so the session cookie is Secure. Default false.',
 		schema: (value) => /^(1|true|yes|on)$/i.test(value ?? '')
+	},
+	AUTH_DISABLED: {
+		description:
+			'Testing only: "true" skips the login under `npm run dev`. Ignored by production builds.',
+		schema: (value) => /^(1|true|yes|on)$/i.test(value ?? '')
 	}
 });

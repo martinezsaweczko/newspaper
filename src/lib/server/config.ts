@@ -1,4 +1,10 @@
-import { COOKIE_SECURE, DATA_DIR, NEWSPAPER_DIR, SESSION_SECRET } from '$app/env/private';
+import {
+	AUTH_DISABLED,
+	COOKIE_SECURE,
+	DATA_DIR,
+	NEWSPAPER_DIR,
+	SESSION_SECRET
+} from '$app/env/private';
 import { dev } from '$app/env';
 import path from 'node:path';
 
@@ -6,8 +12,21 @@ import path from 'node:path';
 export const config = {
 	newspaperDir: path.resolve(NEWSPAPER_DIR),
 	dataDir: path.resolve(DATA_DIR),
-	cookieSecure: COOKIE_SECURE
+	cookieSecure: COOKIE_SECURE,
+	/** Testing only: skip the login. Honoured by the dev server only, never by `node build`. */
+	authDisabled: dev && AUTH_DISABLED
 };
+
+/** The user every request runs as while `authDisabled` is on. */
+export const DEV_USER = 'tester';
+
+if (AUTH_DISABLED) {
+	console.warn(
+		dev
+			? '[newspaper] AUTH_DISABLED is on: the login is skipped (dev server only).'
+			: '[newspaper] AUTH_DISABLED is ignored outside the dev server.'
+	);
+}
 
 const DEV_SECRET = 'newspaper-dev-only-secret-do-not-use-in-production';
 let warned = false;
