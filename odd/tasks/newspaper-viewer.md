@@ -57,3 +57,5 @@ shown as a mosaic of first-page thumbnails; clicking a cover opens the PDF.
 
 ## Next step
 User review; optional native review of the work-unit commits; then push/PR (human decision).
+- Parent spot check 17/11/2026: `npm run test:unit -- --run` -> 10 files, 118 tests passed.
+- Native review (RDD on): unavailable, gentle-ai binary no longer present on this machine; no review receipt.
