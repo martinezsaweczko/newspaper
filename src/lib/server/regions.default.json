@@ -1,0 +1,176 @@
+{
+	"regions": [
+		{
+			"name": "Andalucía",
+			"match": [
+				"diario de sevilla",
+				"diario de cadiz",
+				"diario de jerez",
+				"diario de almeria",
+				"diario de cordoba",
+				"diario de jaen",
+				"diario de huelva",
+				"huelva informacion",
+				"malaga hoy",
+				"granada hoy",
+				"europa sur",
+				"ideal",
+				"sur",
+				"diario sur",
+				"la voz de cadiz",
+				"el eco de sevilla"
+			]
+		},
+		{
+			"name": "Aragón",
+			"match": [
+				"heraldo de aragon",
+				"el periodico de aragon",
+				"diario del altoaragon",
+				"diario de teruel"
+			]
+		},
+		{
+			"name": "Asturias",
+			"match": [
+				"la nueva espana",
+				"el comercio",
+				"la voz de aviles"
+			]
+		},
+		{
+			"name": "Baleares",
+			"match": [
+				"diario de mallorca",
+				"ultima hora",
+				"diario de ibiza",
+				"periodico de ibiza",
+				"diario menorca"
+			]
+		},
+		{
+			"name": "Canarias",
+			"match": [
+				"canarias7",
+				"canarias 7",
+				"la provincia",
+				"diario de avisos",
+				"la opinion de tenerife",
+				"el dia de tenerife"
+			]
+		},
+		{
+			"name": "Cantabria",
+			"match": [
+				"el diario montanes",
+				"diario montanes",
+				"el diario cantabria"
+			]
+		},
+		{
+			"name": "Castilla y León",
+			"match": [
+				"el norte de castilla",
+				"diario de leon",
+				"diario de burgos",
+				"la gaceta de salamanca",
+				"el adelantado de segovia",
+				"diario de avila",
+				"la opinion de zamora",
+				"diario de valladolid"
+			]
+		},
+		{
+			"name": "Castilla-La Mancha",
+			"match": [
+				"la tribuna de toledo",
+				"la tribuna de albacete",
+				"lanza",
+				"la tribuna de ciudad real"
+			]
+		},
+		{
+			"name": "Catalunya",
+			"match": [
+				"la vanguardia",
+				"el periodico",
+				"el periodico de catalunya",
+				"ara",
+				"el punt avui",
+				"diari de girona",
+				"segre",
+				"diari de tarragona",
+				"regio7",
+				"regio 7"
+			]
+		},
+		{
+			"name": "Comunitat Valenciana",
+			"match": [
+				"levante emv",
+				"las provincias",
+				"diario informacion",
+				"mediterraneo",
+				"el periodico mediterraneo"
+			]
+		},
+		{
+			"name": "Extremadura",
+			"match": [
+				"diario hoy",
+				"el periodico extremadura",
+				"la cronica de badajoz"
+			]
+		},
+		{
+			"name": "Galicia",
+			"match": [
+				"la voz de galicia",
+				"faro de vigo",
+				"el correo gallego",
+				"diario de pontevedra",
+				"el progreso",
+				"atlantico diario",
+				"la opinion a coruna",
+				"el ideal gallego",
+				"la region de ourense"
+			]
+		},
+		{
+			"name": "La Rioja",
+			"match": [
+				"la rioja",
+				"diario la rioja",
+				"nueva rioja"
+			]
+		},
+		{
+			"name": "Murcia",
+			"match": [
+				"la verdad",
+				"la verdad de murcia",
+				"la opinion de murcia"
+			]
+		},
+		{
+			"name": "Navarra",
+			"match": [
+				"diario de navarra",
+				"diario de noticias de navarra",
+				"noticias de navarra"
+			]
+		},
+		{
+			"name": "País Vasco",
+			"match": [
+				"el correo",
+				"diario vasco",
+				"el diario vasco",
+				"deia",
+				"berria",
+				"noticias de gipuzkoa",
+				"diario de noticias de alava"
+			]
+		}
+	]
+}

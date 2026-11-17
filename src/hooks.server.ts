@@ -3,6 +3,7 @@ import { users } from '#lib/server/auth/index.ts';
 import { isCrossSiteForm } from '#lib/server/auth/origin.ts';
 import { SESSION_COOKIE, verifySession } from '#lib/server/auth/session.ts';
 import { config, sessionSecret } from '#lib/server/config.ts';
+import { seedRegionsFile } from '#lib/server/library/regions.ts';
 import type { Handle, ServerInit } from '@sveltejs/kit/hooks';
 import { mkdirSync } from 'node:fs';
 
@@ -10,6 +11,7 @@ export const init: ServerInit = () => {
 	if (building) return;
 	sessionSecret(); // fail fast in production without a secret
 	mkdirSync(config.dataDir, { recursive: true });
+	seedRegionsFile(config.dataDir);
 };
 
 /** Routes reachable without a session. Static files are served by adapter-node before this hook. */
