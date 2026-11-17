@@ -1,7 +1,5 @@
 export type RangeResult =
-	| { kind: 'full' }
-	| { kind: 'partial'; start: number; end: number }
-	| { kind: 'unsatisfiable' };
+	{ kind: 'full' } | { kind: 'partial'; start: number; end: number } | { kind: 'unsatisfiable' };
 
 /**
  * Parse a `Range` header for a resource of `size` bytes (RFC 9110 §14.1.2).
@@ -30,7 +28,14 @@ export function parseRange(header: string | null | undefined, size: number): Ran
 
 /** `inline; filename="ascii"; filename*=UTF-8''percent-encoded` (RFC 6266 / 5987). */
 export function contentDisposition(type: 'inline' | 'attachment', filename: string): string {
-	const ascii = filename.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
-	const encoded = encodeURIComponent(filename).replace(/['()*]/g, (c) => '%' + c.charCodeAt(0).toString(16).toUpperCase());
+	const ascii = filename
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.replace(/[^\x20-\x7e]/g, '_')
+		.replace(/["\\]/g, '_');
+	const encoded = encodeURIComponent(filename).replace(
+		/['()*]/g,
+		(c) => '%' + c.charCodeAt(0).toString(16).toUpperCase()
+	);
 	return `${type}; filename="${ascii}"; filename*=UTF-8''${encoded}`;
 }

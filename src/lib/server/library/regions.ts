@@ -41,9 +41,7 @@ export function validateRegions(data: unknown): RegionConfig[] {
  */
 export function createRegionMap(regions: RegionConfig[]): RegionMap {
 	const patterns = regions
-		.flatMap((region) =>
-			region.match.map((m) => ({ region: region.name, pattern: normalise(m) }))
-		)
+		.flatMap((region) => region.match.map((m) => ({ region: region.name, pattern: normalise(m) })))
 		.filter((p) => p.pattern !== '')
 		.sort((a, b) => b.pattern.length - a.pattern.length);
 
@@ -105,7 +103,9 @@ export function createRegionStore(dataDir: string, log: (msg: string) => void = 
 			try {
 				current = createRegionMap(validateRegions(JSON.parse(readFileSync(file, 'utf8'))));
 			} catch (err) {
-				log(`regions: ignoring invalid ${file} (${(err as Error).message}); keeping the last good mapping`);
+				log(
+					`regions: ignoring invalid ${file} (${(err as Error).message}); keeping the last good mapping`
+				);
 			}
 			return current;
 		}

@@ -32,7 +32,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 		if (event.request.method !== 'GET' && event.request.method !== 'HEAD') {
 			return new Response('Sign in first.', { status: 401 });
 		}
-		const next = pathname === '/' && !search ? '' : `?next=${encodeURIComponent(pathname + search)}`;
+		const next =
+			pathname === '/' && !search ? '' : `?next=${encodeURIComponent(pathname + search)}`;
 		return new Response(null, { status: 303, headers: { location: `/login${next}` } });
 	}
 

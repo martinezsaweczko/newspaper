@@ -72,14 +72,18 @@ async function main() {
 		const [name] = rest;
 		if (!name) usage();
 		if (password === undefined) {
-			password = await promptHidden(`Password for ${name} (min ${MIN_PASSWORD_LENGTH} characters): `);
+			password = await promptHidden(
+				`Password for ${name} (min ${MIN_PASSWORD_LENGTH} characters): `
+			);
 			if (process.stdin.isTTY) {
 				const again = await promptHidden('Repeat the password: ');
 				if (again !== password) throw new Error('The passwords do not match.');
 			}
 		}
 		const result = await addUser(dataDir, name, password);
-		console.log(`${result === 'created' ? 'Created' : 'Updated the password of'} ${name.toLowerCase()} in ${path.join(dataDir, 'users.json')}`);
+		console.log(
+			`${result === 'created' ? 'Created' : 'Updated the password of'} ${name.toLowerCase()} in ${path.join(dataDir, 'users.json')}`
+		);
 	} else if (command === 'remove') {
 		const [name] = rest;
 		if (!name) usage();

@@ -6,7 +6,10 @@
 export function sanitizeNext(raw: string | null | undefined): string {
 	if (!raw || raw.length > 2048) return '/';
 	if (!raw.startsWith('/') || raw.startsWith('//')) return '/';
-	if (/[\\\u0000-\u001f\u007f]/.test(raw)) return '/';
+	for (const ch of raw) {
+		const code = ch.charCodeAt(0);
+		if (ch === '\\' || code < 0x20 || code === 0x7f) return '/';
+	}
 	let url: URL;
 	try {
 		url = new URL(raw, 'http://local.invalid');

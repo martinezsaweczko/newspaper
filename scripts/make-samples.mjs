@@ -40,13 +40,30 @@ const HEADLINES = [
 ];
 
 const DAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const MONTHS = [
+	'enero',
+	'febrero',
+	'marzo',
+	'abril',
+	'mayo',
+	'junio',
+	'julio',
+	'agosto',
+	'septiembre',
+	'octubre',
+	'noviembre',
+	'diciembre'
+];
 
 function dateOf(file) {
 	const iso = /(\d{4})-(\d{2})-(\d{2})/.exec(file);
 	const compact = /(\d{4})(\d{2})(\d{2})/.exec(file);
 	const dmy = /(\d{2})[-_](\d{2})[-_](\d{4})/.exec(file);
-	const [y, m, d] = iso ? [iso[1], iso[2], iso[3]] : compact ? [compact[1], compact[2], compact[3]] : [dmy[3], dmy[2], dmy[1]];
+	const [y, m, d] = iso
+		? [iso[1], iso[2], iso[3]]
+		: compact
+			? [compact[1], compact[2], compact[3]]
+			: [dmy[3], dmy[2], dmy[1]];
 	const date = new Date(Date.UTC(+y, +m - 1, +d));
 	return `${DAYS[date.getUTCDay()]}, ${+d} de ${MONTHS[+m - 1]} de ${y}`;
 }
@@ -111,7 +128,8 @@ function page([file, masthead, tagline, tone], index) {
 	c += rect(m + 40, photoTop - photoH, 140, photoH * 0.62, tone - 0.18);
 	c += rect(m + 200, photoTop - photoH, 110, photoH * 0.4, tone - 0.1);
 	c += rect(m + 250, photoTop - 70, 46, 46, Math.min(0.92, tone + 0.3));
-	c += '0 g\n' + text('TI', 8, m, photoTop - photoH - 11, 'Imagen de archivo. Ilustración sintética.');
+	c +=
+		'0 g\n' + text('TI', 8, m, photoTop - photoH - 11, 'Imagen de archivo. Ilustración sintética.');
 	c += column(m, photoTop - photoH - 26, 168, 22, index);
 	c += column(m + 184, photoTop - photoH - 26, 168, 22, index + 3);
 	// side column
@@ -162,6 +180,8 @@ export function makeSamplePdf(edition, index = 0) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
 	mkdirSync(target, { recursive: true });
-	EDITIONS.forEach((edition, i) => writeFileSync(path.join(target, edition[0]), makeSamplePdf(edition, i)));
+	EDITIONS.forEach((edition, i) =>
+		writeFileSync(path.join(target, edition[0]), makeSamplePdf(edition, i))
+	);
 	console.log(`Wrote ${EDITIONS.length} synthetic editions to ${target}`);
 }

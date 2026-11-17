@@ -1,6 +1,7 @@
 import { defineEnvVars } from '@sveltejs/kit/env';
 
-const optional = (value: string | undefined) => (value === undefined || value === '' ? undefined : value);
+const optional = (value: string | undefined) =>
+	value === undefined || value === '' ? undefined : value;
 
 export const variables = defineEnvVars({
 	NEWSPAPER_DIR: {

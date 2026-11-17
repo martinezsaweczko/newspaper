@@ -32,11 +32,7 @@
 		},
 		{
 			"name": "Asturias",
-			"match": [
-				"la nueva espana",
-				"el comercio",
-				"la voz de aviles"
-			]
+			"match": ["la nueva espana", "el comercio", "la voz de aviles"]
 		},
 		{
 			"name": "Baleares",
@@ -61,11 +57,7 @@
 		},
 		{
 			"name": "Cantabria",
-			"match": [
-				"el diario montanes",
-				"diario montanes",
-				"el diario cantabria"
-			]
+			"match": ["el diario montanes", "diario montanes", "el diario cantabria"]
 		},
 		{
 			"name": "Castilla y León",
@@ -116,11 +108,7 @@
 		},
 		{
 			"name": "Extremadura",
-			"match": [
-				"diario hoy",
-				"el periodico extremadura",
-				"la cronica de badajoz"
-			]
+			"match": ["diario hoy", "el periodico extremadura", "la cronica de badajoz"]
 		},
 		{
 			"name": "Galicia",
@@ -138,27 +126,15 @@
 		},
 		{
 			"name": "La Rioja",
-			"match": [
-				"la rioja",
-				"diario la rioja",
-				"nueva rioja"
-			]
+			"match": ["la rioja", "diario la rioja", "nueva rioja"]
 		},
 		{
 			"name": "Murcia",
-			"match": [
-				"la verdad",
-				"la verdad de murcia",
-				"la opinion de murcia"
-			]
+			"match": ["la verdad", "la verdad de murcia", "la opinion de murcia"]
 		},
 		{
 			"name": "Navarra",
-			"match": [
-				"diario de navarra",
-				"diario de noticias de navarra",
-				"noticias de navarra"
-			]
+			"match": ["diario de navarra", "diario de noticias de navarra", "noticias de navarra"]
 		},
 		{
 			"name": "País Vasco",

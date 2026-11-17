@@ -71,8 +71,7 @@ export function buildNewsstand(
 	const needle = normalise(q);
 
 	const shownEditions = ofDay.filter(
-		(e) =>
-			(!region || e.region === region) && (!needle || normalise(e.masthead).includes(needle))
+		(e) => (!region || e.region === region) && (!needle || normalise(e.masthead).includes(needle))
 	);
 
 	const groups = sortRegions(

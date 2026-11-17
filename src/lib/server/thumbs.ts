@@ -24,15 +24,27 @@ export interface ThumbnailerOptions {
 }
 
 export function thumbKey(source: Pick<ThumbSource, 'rel' | 'mtimeMs' | 'size'>): string {
-	return createHash('sha256').update(`${source.rel}|${source.mtimeMs}|${source.size}`).digest('hex');
+	return createHash('sha256')
+		.update(`${source.rel}|${source.mtimeMs}|${source.size}`)
+		.digest('hex');
 }
 
 function run(bin: string, args: string[], timeoutMs: number): Promise<void> {
 	return new Promise((resolve, reject) => {
-		execFile(bin, args, { timeout: timeoutMs, killSignal: 'SIGKILL', windowsHide: true }, (err, _out, stderr) => {
-			if (err) reject(new Error(`${bin} failed: ${err.message}${stderr ? ` (${String(stderr).trim().slice(0, 200)})` : ''}`));
-			else resolve();
-		});
+		execFile(
+			bin,
+			args,
+			{ timeout: timeoutMs, killSignal: 'SIGKILL', windowsHide: true },
+			(err, _out, stderr) => {
+				if (err)
+					reject(
+						new Error(
+							`${bin} failed: ${err.message}${stderr ? ` (${String(stderr).trim().slice(0, 200)})` : ''}`
+						)
+					);
+				else resolve();
+			}
+		);
 	});
 }
 
@@ -66,7 +78,20 @@ export function createThumbnailer({
 			await withSlot(() =>
 				run(
 					bin,
-					['-f', '1', '-l', '1', '-jpeg', '-jpegopt', 'quality=82', '-scale-to', '640', '-singlefile', source.abs, prefix],
+					[
+						'-f',
+						'1',
+						'-l',
+						'1',
+						'-jpeg',
+						'-jpegopt',
+						'quality=82',
+						'-scale-to',
+						'640',
+						'-singlefile',
+						source.abs,
+						prefix
+					],
 					timeoutMs
 				)
 			);

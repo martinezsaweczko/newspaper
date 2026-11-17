@@ -12,8 +12,12 @@ export const MIN_PASSWORD_LENGTH = 8;
 
 function scryptAsync(password: string, salt: Buffer, options: ScryptOptions): Promise<Buffer> {
 	return new Promise((resolve, reject) =>
-		scrypt(password.normalize('NFKC'), salt, KEY_LENGTH, { ...options, maxmem: 64 * 1024 * 1024 }, (err, key) =>
-			err ? reject(err) : resolve(key)
+		scrypt(
+			password.normalize('NFKC'),
+			salt,
+			KEY_LENGTH,
+			{ ...options, maxmem: 64 * 1024 * 1024 },
+			(err, key) => (err ? reject(err) : resolve(key))
 		)
 	);
 }
@@ -22,7 +26,14 @@ function scryptAsync(password: string, salt: Buffer, options: ScryptOptions): Pr
 export async function hashPassword(password: string): Promise<string> {
 	const salt = randomBytes(16);
 	const key = await scryptAsync(password, salt, PARAMS);
-	return ['scrypt', PARAMS.N, PARAMS.r, PARAMS.p, salt.toString('base64url'), key.toString('base64url')].join('$');
+	return [
+		'scrypt',
+		PARAMS.N,
+		PARAMS.r,
+		PARAMS.p,
+		salt.toString('base64url'),
+		key.toString('base64url')
+	].join('$');
 }
 
 export async function verifyPassword(password: string, stored: string): Promise<boolean> {
@@ -74,7 +85,11 @@ function writeUsers(dataDir: string, file: UsersFile): void {
 }
 
 /** Create a user or change their password. Returns 'created' or 'updated'. */
-export async function addUser(dataDir: string, name: string, password: string): Promise<'created' | 'updated'> {
+export async function addUser(
+	dataDir: string,
+	name: string,
+	password: string
+): Promise<'created' | 'updated'> {
 	const user = normaliseUsername(name);
 	if (!user) throw new Error('Usernames are 1-32 characters: letters, digits, ".", "_" or "-".');
 	if (password.length < MIN_PASSWORD_LENGTH) {
@@ -82,7 +97,10 @@ export async function addUser(dataDir: string, name: string, password: string): 
 	}
 	const file = readUsers(dataDir);
 	const existed = user in file.users;
-	file.users[user] = { hash: await hashPassword(password), created: file.users[user]?.created ?? new Date().toISOString() };
+	file.users[user] = {
+		hash: await hashPassword(password),
+		created: file.users[user]?.created ?? new Date().toISOString()
+	};
 	writeUsers(dataDir, file);
 	return existed ? 'updated' : 'created';
 }
@@ -100,7 +118,11 @@ export function removeUser(dataDir: string, name: string): boolean {
 let dummyHash: Promise<string> | null = null;
 
 /** Returns the normalised username when the password matches, else null. */
-export async function authenticate(dataDir: string, name: string, password: string): Promise<string | null> {
+export async function authenticate(
+	dataDir: string,
+	name: string,
+	password: string
+): Promise<string | null> {
 	const user = normaliseUsername(name);
 	const record = user ? readUsers(dataDir).users[user] : undefined;
 	if (!user || !record) {
