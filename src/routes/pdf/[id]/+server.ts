@@ -32,7 +32,10 @@ export const GET: RequestHandler = ({ params, request, url }) => {
 	const range = parseRange(rangeHeader, size);
 
 	if (range.kind === 'unsatisfiable') {
-		return new Response(null, { status: 416, headers: { ...headers, 'content-range': `bytes */${size}` } });
+		return new Response(null, {
+			status: 416,
+			headers: { ...headers, 'content-range': `bytes */${size}` }
+		});
 	}
 
 	const [start, end] = range.kind === 'partial' ? [range.start, range.end] : [0, size - 1];
@@ -45,7 +48,11 @@ export const GET: RequestHandler = ({ params, request, url }) => {
 	if (range.kind === 'partial') {
 		return new Response(body, {
 			status: 206,
-			headers: { ...headers, 'content-range': `bytes ${start}-${end}/${size}`, 'content-length': String(length) }
+			headers: {
+				...headers,
+				'content-range': `bytes ${start}-${end}/${size}`,
+				'content-length': String(length)
+			}
 		});
 	}
 	return new Response(body, { headers: { ...headers, 'content-length': String(size) } });

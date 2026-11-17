@@ -1,1 +1,123 @@
 @import 'tailwindcss';
+
+/*
+ * Design tokens. DESIGN.md is the rulebook; these are the only colours in the app.
+ * Every --t-* token has a light and a dark value. Components use the Tailwind names mapped in
+ * the @theme block below (bg-paper, text-ink, border-hairline, ...), never raw colours.
+ */
+:root {
+	color-scheme: light;
+	--t-paper: #f3f2ef; /* newsprint ground, low-chroma stone */
+	--t-sheet: #fbfaf7; /* fields, the login sheet */
+	--t-shelf: #e8e6e0; /* front-page placeholder and loading tone */
+	--t-ink: #141414; /* text, rules, the primary action */
+	--t-ink-soft: #5b5954; /* secondary notes, 6.3:1 on paper */
+	--t-hairline: #d6d3cb; /* field borders, quiet separators */
+	--t-control: #a8a49a; /* field borders at rest (3:1 on sheet) */
+	--t-on-ink: #fafafa; /* text on an ink fill */
+	--t-signal: #1d5fbf; /* the one hue: focus ring, today's marker */
+	--t-error: #a3201c;
+	--t-shadow: 20 18 12; /* rgb triplet for the paper shadow */
+	--t-page-dim: 1; /* front pages are shown as printed */
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		color-scheme: dark;
+		--t-paper: #141312;
+		--t-sheet: #1c1b19;
+		--t-shelf: #24231f;
+		--t-ink: #ecebe6;
+		--t-ink-soft: #a6a39b;
+		--t-hairline: #34322e;
+		--t-control: #6b6861;
+		--t-on-ink: #141312;
+		--t-signal: #7eaaf5;
+		--t-error: #ff8c84;
+		--t-shadow: 0 0 0;
+		--t-page-dim: 0.9; /* newsprint under a lamp, not a light box */
+	}
+}
+
+@theme inline {
+	--color-paper: var(--t-paper);
+	--color-sheet: var(--t-sheet);
+	--color-shelf: var(--t-shelf);
+	--color-ink: var(--t-ink);
+	--color-ink-soft: var(--t-ink-soft);
+	--color-hairline: var(--t-hairline);
+	--color-control: var(--t-control);
+	--color-on-ink: var(--t-on-ink);
+	--color-signal: var(--t-signal);
+	--color-error: var(--t-error);
+
+	--font-serif: 'Newsreader Variable', 'Newsreader', Georgia, 'Times New Roman', serif;
+	--font-sans: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+	html {
+		background: var(--t-paper);
+		color: var(--t-ink);
+		font-family: var(--font-sans);
+		-webkit-text-size-adjust: 100%;
+		text-rendering: optimizeLegibility;
+	}
+
+	body {
+		min-height: 100dvh;
+		background: var(--t-paper);
+	}
+
+	:focus-visible {
+		outline: 3px solid var(--t-signal);
+		outline-offset: 3px;
+		border-radius: 2px;
+	}
+
+	::selection {
+		background: var(--t-ink);
+		color: var(--t-on-ink);
+	}
+}
+
+@layer components {
+	/* The nameplate's double rule: a heavy rule over a light one, as printed under a masthead. */
+	.double-rule {
+		height: 7px;
+		border-top: 3px solid var(--t-ink);
+		border-bottom: 1px solid var(--t-ink);
+	}
+
+	/* A front page lying on the stand: paper on paper, lifted by a soft shadow. */
+	.front-page {
+		box-shadow:
+			0 1px 2px rgb(var(--t-shadow) / 0.08),
+			0 6px 18px -8px rgb(var(--t-shadow) / 0.28);
+		transition:
+			transform 160ms ease-out,
+			box-shadow 160ms ease-out;
+	}
+
+	.front-page img {
+		filter: brightness(var(--t-page-dim));
+	}
+
+	a:hover > .front-page,
+	a:focus-visible > .front-page {
+		transform: translateY(-3px);
+		box-shadow:
+			0 2px 4px rgb(var(--t-shadow) / 0.08),
+			0 14px 28px -10px rgb(var(--t-shadow) / 0.36);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.front-page {
+			transition: none;
+		}
+		a:hover > .front-page,
+		a:focus-visible > .front-page {
+			transform: none;
+		}
+	}
+}

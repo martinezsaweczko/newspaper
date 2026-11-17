@@ -3,6 +3,7 @@ import {
 	formatDate,
 	formatLongDate,
 	formatShortDate,
+	formatWeekdayDate,
 	isoFromLocalDate,
 	isValidDate,
 	parseIsoDate
@@ -17,6 +18,7 @@ describe('date formatting', () => {
 		expect(formatDate(iso)).toBe(short);
 		expect(formatLongDate(iso)).toBe(long);
 		expect(formatShortDate(iso)).toBe(compact);
+		expect(formatWeekdayDate(iso)).toBe(`${compact.slice(0, 3)} ${short}`);
 	});
 
 	it('prints a dash for invalid dates', () => {

@@ -79,3 +79,11 @@ export function formatShortDate(iso: string): string {
 	const weekday = WEEKDAYS[new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay()].slice(0, 3);
 	return `${weekday} ${p.day} ${MONTHS[p.month - 1].slice(0, 3)}`;
 }
+
+/** `Tue 17/11/2026` — for lists of dates. */
+export function formatWeekdayDate(iso: string): string {
+	const p = parseIsoDate(iso);
+	if (!p) return '—';
+	const weekday = WEEKDAYS[new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay()].slice(0, 3);
+	return `${weekday} ${formatDate(iso)}`;
+}
