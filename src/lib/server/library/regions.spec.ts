@@ -34,7 +34,7 @@ describe('createRegionMap', () => {
 		expect(map.regionOf(masthead)).toBe(region);
 	});
 
-	it('keeps the file order and leaves National out of it', () => {
+	it('keeps the file order and leaves Nacional out of it', () => {
 		expect(map.order).toEqual(['Andalucía', 'Galicia', 'Asturias', 'Aragón']);
 	});
 });

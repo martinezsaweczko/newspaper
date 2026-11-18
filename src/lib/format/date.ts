@@ -1,23 +1,23 @@
 /**
  * The single source of truth for dates shown in the UI.
- * European formats, English words, no Intl / toLocale* (output must not depend on the host locale).
- * Dates travel as ISO `YYYY-MM-DD` strings.
+ * European formats, Spanish words (es-ES), no Intl / toLocale* (output must not depend on the
+ * host locale). Dates travel as ISO `YYYY-MM-DD` strings.
  */
 
-const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const WEEKDAYS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MONTHS = [
-	'January',
-	'February',
-	'March',
-	'April',
-	'May',
-	'June',
-	'July',
-	'August',
-	'September',
-	'October',
-	'November',
-	'December'
+	'enero',
+	'febrero',
+	'marzo',
+	'abril',
+	'mayo',
+	'junio',
+	'julio',
+	'agosto',
+	'septiembre',
+	'octubre',
+	'noviembre',
+	'diciembre'
 ];
 
 const ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -64,26 +64,32 @@ export function formatDate(iso: string): string {
 	return `${pad(p.day)}/${pad(p.month)}/${p.year}`;
 }
 
-/** `Tuesday, 17 November 2026` */
+const weekdayOf = (p: DateParts) =>
+	WEEKDAYS[new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay()];
+
+/** `martes, 17 de noviembre de 2026` — lowercase, for use inside a sentence. */
 export function formatLongDate(iso: string): string {
 	const p = parseIsoDate(iso);
 	if (!p) return '—';
-	const weekday = WEEKDAYS[new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay()];
-	return `${weekday}, ${p.day} ${MONTHS[p.month - 1]} ${p.year}`;
+	return `${weekdayOf(p)}, ${p.day} de ${MONTHS[p.month - 1]} de ${p.year}`;
 }
 
-/** `Tue 17 Nov` — compact label for date lists. */
+/** `Martes, 17 de noviembre de 2026` — the long date as a headline (dateline, titles, captions). */
+export function formatDateline(iso: string): string {
+	const long = formatLongDate(iso);
+	return long.charAt(0).toUpperCase() + long.slice(1);
+}
+
+/** `mar 17 nov` — compact label for date lists. */
 export function formatShortDate(iso: string): string {
 	const p = parseIsoDate(iso);
 	if (!p) return '—';
-	const weekday = WEEKDAYS[new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay()].slice(0, 3);
-	return `${weekday} ${p.day} ${MONTHS[p.month - 1].slice(0, 3)}`;
+	return `${weekdayOf(p).slice(0, 3)} ${p.day} ${MONTHS[p.month - 1].slice(0, 3)}`;
 }
 
-/** `Tue 17/11/2026` — for lists of dates. */
+/** `mar 17/11/2026` — for lists of dates. */
 export function formatWeekdayDate(iso: string): string {
 	const p = parseIsoDate(iso);
 	if (!p) return '—';
-	const weekday = WEEKDAYS[new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay()].slice(0, 3);
-	return `${weekday} ${formatDate(iso)}`;
+	return `${weekdayOf(p).slice(0, 3)} ${formatDate(iso)}`;
 }

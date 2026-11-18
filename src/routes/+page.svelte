@@ -2,7 +2,12 @@
 	import FrontPage from '#lib/components/FrontPage.svelte';
 	import { SHELF_GRID, shelfSpan } from '#lib/components/shelf.ts';
 	import SiteHeader from '#lib/components/SiteHeader.svelte';
-	import { formatLongDate, formatShortDate, formatWeekdayDate } from '#lib/format/date.ts';
+	import {
+		formatDateline,
+		formatLongDate,
+		formatShortDate,
+		formatWeekdayDate
+	} from '#lib/format/date.ts';
 	import { standUrl } from '#lib/stand-url.ts';
 	import { resolve } from '$app/paths';
 	import type { PageProps } from './$types';
@@ -32,7 +37,7 @@
 </script>
 
 <svelte:head>
-	<title>{stand.date ? `${formatLongDate(stand.date)} · NewsPaper` : 'NewsPaper'}</title>
+	<title>{stand.date ? `${formatDateline(stand.date)} · NewsPaper` : 'NewsPaper'}</title>
 </svelte:head>
 
 <div class="mx-auto max-w-[1440px] px-4 sm:px-8">
@@ -42,11 +47,11 @@
 		{#if !stand.date}
 			<section class="mt-12 max-w-[60ch]" aria-labelledby="empty-title">
 				<h1 id="empty-title" class="font-serif text-[28px] leading-tight font-semibold">
-					The stand is empty
+					El quiosco está vacío
 				</h1>
 				<p class="mt-3 text-base leading-relaxed text-ink">
-					No newspapers have arrived yet. Editions appear here as soon as their PDFs are placed in
-					the shared folder; each one is shown by its front page, grouped by region.
+					Todavía no ha llegado ningún periódico. Las ediciones aparecen aquí en cuanto sus PDF se
+					dejan en la carpeta compartida; cada una se muestra por su portada, agrupada por región.
 				</p>
 			</section>
 		{:else}
@@ -56,13 +61,13 @@
 				<h1
 					class="font-serif text-[24px] leading-tight font-semibold tracking-[-0.01em] sm:text-[30px]"
 				>
-					{formatLongDate(stand.date)}
+					{formatDateline(stand.date)}
 				</h1>
 				<p class="text-[14px] text-ink-soft tabular-nums">
-					{plural(stand.onDate, 'front page', 'front pages')} from {plural(
+					{plural(stand.onDate, 'portada', 'portadas')} de {plural(
 						stand.regions.length,
-						'region',
-						'regions'
+						'región',
+						'regiones'
 					)}
 				</p>
 			</div>
@@ -76,15 +81,15 @@
 				data-sveltekit-replacestate
 				class="flex flex-col gap-3 py-4 lg:flex-row lg:items-center lg:justify-between"
 				role="search"
-				aria-label="Choose a day, region or paper"
+				aria-label="Elige un día, una región o un periódico"
 			>
-				<nav class="flex items-center gap-1" aria-label="Days">
+				<nav class="flex items-center gap-1" aria-label="Días">
 					{#if stand.prev}
 						<a
 							class="inline-flex min-h-11 items-center gap-1 rounded-[6px] px-2 text-[14px] text-ink hover:bg-shelf"
 							href={resolve(standUrl({ date: stand.prev, region: stand.region, q: stand.q }))}
 							rel="prev"
-							aria-label={`Previous day with papers: ${formatLongDate(stand.prev)}`}
+							aria-label={`Día anterior con periódicos: ${formatLongDate(stand.prev)}`}
 						>
 							<span aria-hidden="true">‹</span>
 							{formatShortDate(stand.prev)}
@@ -92,11 +97,11 @@
 					{:else}
 						<span
 							class="inline-flex min-h-11 items-center gap-1 px-2 text-[14px] text-ink-soft"
-							aria-disabled="true"><span aria-hidden="true">‹</span> Earliest</span
+							aria-disabled="true"><span aria-hidden="true">‹</span> Más antiguo</span
 						>
 					{/if}
 
-					<label class="sr-only" for="date">Day</label>
+					<label class="sr-only" for="date">Día</label>
 					<select
 						id="date"
 						name="date"
@@ -113,7 +118,7 @@
 							class="inline-flex min-h-11 items-center gap-1 rounded-[6px] px-2 text-[14px] text-ink hover:bg-shelf"
 							href={resolve(standUrl({ date: stand.next, region: stand.region, q: stand.q }))}
 							rel="next"
-							aria-label={`Next day with papers: ${formatLongDate(stand.next)}`}
+							aria-label={`Día siguiente con periódicos: ${formatLongDate(stand.next)}`}
 						>
 							{formatShortDate(stand.next)}
 							<span aria-hidden="true">›</span>
@@ -121,32 +126,32 @@
 					{:else}
 						<span
 							class="inline-flex min-h-11 items-center gap-1 px-2 text-[14px] text-ink-soft"
-							aria-disabled="true">Latest <span aria-hidden="true">›</span></span
+							aria-disabled="true">Más reciente <span aria-hidden="true">›</span></span
 						>
 					{/if}
 				</nav>
 
 				<div class="flex items-center gap-3">
-					<label class="sr-only" for="region">Region</label>
+					<label class="sr-only" for="region">Región</label>
 					<select
 						id="region"
 						name="region"
 						class="h-11 w-[42%] min-w-0 cursor-pointer rounded-[6px] border border-control bg-sheet px-3 text-base text-ink sm:w-auto sm:text-[14px]"
 						onchange={() => submitSoon()}
 					>
-						<option value="" selected={!stand.region}>All regions</option>
+						<option value="" selected={!stand.region}>Todas las regiones</option>
 						{#each stand.regions as r (r)}
 							<option value={r} selected={r === stand.region}>{r}</option>
 						{/each}
 					</select>
 
-					<label class="sr-only" for="q">Find a paper</label>
+					<label class="sr-only" for="q">Buscar un periódico</label>
 					<input
 						id="q"
 						name="q"
 						type="search"
 						value={stand.q}
-						placeholder="Find a paper…"
+						placeholder="Buscar un periódico…"
 						autocomplete="off"
 						spellcheck="false"
 						maxlength="80"
@@ -157,26 +162,26 @@
 						<button
 							type="submit"
 							class="h-11 rounded-[6px] bg-ink px-4 text-[14px] font-medium text-on-ink"
-							>Show</button
+							>Mostrar</button
 						>
 					</noscript>
 				</div>
 			</form>
 
 			<p class="sr-only" aria-live="polite">
-				{plural(stand.shown, 'paper', 'papers')} shown
+				Mostrando {plural(stand.shown, 'periódico', 'periódicos')}
 			</p>
 
 			{#if stand.groups.length === 0}
 				<section class="mt-6 border-t-[3px] border-ink pt-4" aria-labelledby="none-title">
 					<h2 id="none-title" class="font-serif text-[24px] leading-tight font-semibold">
-						No paper matches
+						Ningún periódico coincide
 					</h2>
 					<p class="mt-2 text-base text-ink">
-						Nothing {stand.q ? `called “${stand.q}”` : ''}
-						{stand.region ? `from ${stand.region}` : ''} on {formatLongDate(stand.date)}.
+						Nada {stand.q ? `llamado «${stand.q}»` : ''}
+						{stand.region ? `de ${stand.region}` : ''} el {formatLongDate(stand.date)}.
 						<a class="underline underline-offset-4" href={resolve(standUrl({ date: stand.date }))}
-							>Show every paper of the day</a
+							>Ver todos los periódicos del día</a
 						>
 					</p>
 				</section>
@@ -199,7 +204,7 @@
 								{group.region}
 							</h2>
 							<span class="text-[14px] text-ink-soft tabular-nums">
-								{plural(group.editions.length, 'paper', 'papers')}
+								{plural(group.editions.length, 'periódico', 'periódicos')}
 							</span>
 						</div>
 						<ul class="col-span-full mt-5 grid grid-cols-subgrid gap-y-8 sm:gap-y-10">
@@ -215,10 +220,10 @@
 
 			{#if filtered && stand.groups.length > 0}
 				<p class="mt-10 text-[14px] text-ink-soft">
-					Showing {plural(stand.shown, 'paper', 'papers')} of {stand.onDate}.
+					Mostrando {plural(stand.shown, 'periódico', 'periódicos')} de {stand.onDate}.
 					<a
 						class="text-ink underline underline-offset-4"
-						href={resolve(standUrl({ date: stand.date }))}>Show all</a
+						href={resolve(standUrl({ date: stand.date }))}>Ver todos</a
 					>
 				</p>
 			{/if}

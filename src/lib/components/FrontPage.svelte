@@ -24,7 +24,7 @@
 		if (img && img.complete && img.naturalWidth === 0) failed = true;
 	});
 
-	const alt = $derived(`${edition.masthead}, front page, ${formatDate(edition.date)}`);
+	const alt = $derived(`Portada de ${edition.masthead}, ${formatDate(edition.date)}`);
 </script>
 
 <figure class="flex flex-col gap-3">
@@ -40,7 +40,7 @@
 				>
 					<span class="font-serif text-xl leading-tight font-bold text-ink">{edition.masthead}</span
 					>
-					<span class="text-[13px] text-ink-soft">Front page unavailable. Open the PDF.</span>
+					<span class="text-[13px] text-ink-soft">Portada no disponible. Abre el PDF.</span>
 					<span class="sr-only">{alt}</span>
 				</div>
 			{:else}
@@ -66,7 +66,7 @@
 			<a
 				href={resolve('/paper/[slug]', { slug: edition.slug })}
 				class="-my-1 inline-block py-1 font-serif text-[17px] leading-snug font-semibold text-ink underline-offset-4 hover:underline"
-				aria-label={`${edition.masthead}, back issues`}
+				aria-label={`${edition.masthead}, números anteriores`}
 			>
 				{edition.masthead}
 			</a>

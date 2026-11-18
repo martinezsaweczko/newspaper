@@ -37,7 +37,9 @@ export const handle: Handle = async (input) => {
 
 const guarded: Handle = async ({ event, resolve }) => {
 	if (isCrossSiteForm(event.request)) {
-		return new Response('Cross-site form submissions are not allowed.', { status: 403 });
+		return new Response('No se permiten envíos de formularios desde otros sitios.', {
+			status: 403
+		});
 	}
 
 	const session = verifySession(event.cookies.get(SESSION_COOKIE), sessionSecret());
@@ -48,7 +50,7 @@ const guarded: Handle = async ({ event, resolve }) => {
 	const { pathname, search } = event.url;
 	if (!event.locals.user && !isPublic(pathname)) {
 		if (event.request.method !== 'GET' && event.request.method !== 'HEAD') {
-			return new Response('Sign in first.', { status: 401 });
+			return new Response('Inicia sesión primero.', { status: 401 });
 		}
 		const next =
 			pathname === '/' && !search ? '' : `?next=${encodeURIComponent(pathname + search)}`;

@@ -4,7 +4,7 @@ import defaults from '../regions.default.json';
 import { normalise } from './text.ts';
 
 /** Mastheads that match no region. Always listed first. */
-export const NATIONAL = 'National';
+export const NATIONAL = 'Nacional';
 
 export interface RegionConfig {
 	name: string;
@@ -12,7 +12,7 @@ export interface RegionConfig {
 }
 
 export interface RegionMap {
-	/** Region names in the order of the file (National excluded). */
+	/** Region names in the order of the file (Nacional excluded). */
 	order: string[];
 	/** Name of the region for a masthead (display or normalised form). */
 	regionOf(masthead: string): string;

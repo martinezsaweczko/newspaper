@@ -9,7 +9,7 @@ import type { RequestHandler } from './$types';
 /** Stream an edition with HTTP Range support; inline by default, `?download=1` for attachment. */
 export const GET: RequestHandler = ({ params, request, url }) => {
 	const edition = resolveId(config.newspaperDir, params.id);
-	if (!edition) return new Response('Not found', { status: 404 });
+	if (!edition) return new Response('No encontrado', { status: 404 });
 
 	const { size, mtime, mtimeMs } = edition.stat;
 	const etag = `"${size.toString(16)}-${Math.floor(mtimeMs).toString(16)}"`;

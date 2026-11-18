@@ -1,5 +1,6 @@
 import { isoFromLocalDate } from '#lib/format/date.ts';
 import { loginThrottle } from '#lib/server/auth/index.ts';
+import { throttleMessage } from '#lib/server/auth/throttle.ts';
 import { sanitizeNext } from '#lib/server/auth/next.ts';
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, signSession } from '#lib/server/auth/session.ts';
 import { authenticate } from '#lib/server/auth/users.ts';
@@ -25,22 +26,18 @@ export const actions: Actions = {
 		const wait = loginThrottle.retryAfter(key);
 		if (wait > 0) {
 			recordLogin('throttled');
-			const minutes = Math.ceil(wait / 60);
-			return fail(429, {
-				username,
-				message: `Too many attempts. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}.`
-			});
+			return fail(429, { username, message: throttleMessage(wait) });
 		}
 		if (!username || !password) {
 			recordLogin('failure');
-			return fail(400, { username, message: 'Enter your username and password.' });
+			return fail(400, { username, message: 'Escribe tu usuario y tu contraseña.' });
 		}
 
 		const user = await authenticate(config.dataDir, username, password);
 		if (!user) {
 			loginThrottle.fail(key);
 			recordLogin('failure');
-			return fail(400, { username, message: 'That username and password do not match.' });
+			return fail(400, { username, message: 'El usuario y la contraseña no coinciden.' });
 		}
 
 		loginThrottle.reset(key);

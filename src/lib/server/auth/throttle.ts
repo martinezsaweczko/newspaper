@@ -27,3 +27,9 @@ export function createThrottle({ max = 5, windowMs = 15 * 60 * 1000 } = {}) {
 		}
 	};
 }
+
+/** The login message shown while locked: `Demasiados intentos. Vuelve a intentarlo en 5 minutos.` */
+export function throttleMessage(waitSeconds: number): string {
+	const minutes = Math.max(1, Math.ceil(waitSeconds / 60));
+	return `Demasiados intentos. Vuelve a intentarlo en ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}.`;
+}

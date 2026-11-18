@@ -22,9 +22,12 @@ See README.md for the product overview, configuration and deploy.
 
 - Svelte 5 runes only (`$state`, `$derived`, `$props`); no legacy `export let` / stores for local state.
 - Import shared code via the `#lib/...` package import (SvelteKit 3 removed `$lib`).
-- **European formats everywhere** (UI language stays English): dates `dd/mm/yyyy`, long dates
-  `Tuesday, 17 November 2026`. `src/lib/format/date.ts` is the single source of truth: never call
-  `Intl`/`toLocale*` or print a raw ISO date in a template. Dates travel as ISO `YYYY-MM-DD` (URLs).
+- **UI copy is Spanish (es-ES)**; code, comments, logs, CLI and docs stay English. `<html lang="es">`.
+- **European formats everywhere**: dates `dd/mm/yyyy`, long dates `martes, 17 de noviembre de 2026`
+  (`formatLongDate`, inside sentences) or capitalised as a headline (`formatDateline`: `<title>`,
+  the stand `h1`, login dateline, back-issue captions), compact `mar 17 nov`.
+  `src/lib/format/date.ts` is the single source of truth: never call `Intl`/`toLocale*` or print a
+  raw ISO date in a template. Dates travel as ISO `YYYY-MM-DD` (URLs).
 - Server-only code in `src/lib/server/`. Config via env declared in `src/env.ts`; never commit `.env`.
 - Tests next to code: `*.spec.ts` (unit), `*.svelte.spec.ts` (component). Pure logic stays pure
   (root dir / config passed in) so it is unit-testable with tmp dirs.
@@ -39,7 +42,7 @@ See README.md for the product overview, configuration and deploy.
   (`YYYY-MM-DD`, `YYYYMMDD`, `DD-MM-YYYY`; falls back to file mtime).
 - **Region is logical, not a folder**: `regions.json` (in `DATA_DIR`, seeded from
   `src/lib/server/regions.default.json`) maps each region to masthead patterns, matched case- and
-  accent-insensitively against the normalised filename. Unmatched mastheads are **National**.
+  accent-insensitively against the normalised filename. Unmatched mastheads are **Nacional** (`NATIONAL` in `regions.ts`; old `?region=National` links just show all).
   Changing a region = editing the mapping, never moving files.
 - **Ids** are base64url of the relative path; `resolveId` rejects traversal, absolute paths,
   non-PDF files, symlinks leaving the root and missing files.

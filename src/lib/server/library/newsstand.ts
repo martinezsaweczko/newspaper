@@ -16,7 +16,7 @@ export interface Newsstand {
 	/** The closest older / newer date with editions. */
 	prev: string | null;
 	next: string | null;
-	/** Regions with an edition on `date` (before region/search filters), National first. */
+	/** Regions with an edition on `date` (before region/search filters), Nacional first. */
 	regions: string[];
 	/** Region filter in effect (null = all). */
 	region: string | null;
@@ -31,7 +31,7 @@ export interface Newsstand {
 const byMasthead = (a: Edition, b: Edition) =>
 	a.masthead.localeCompare(b.masthead, 'en') || b.mtimeMs - a.mtimeMs;
 
-/** National first, then the order of regions.json, then anything else alphabetically. */
+/** Nacional first, then the order of regions.json, then anything else alphabetically. */
 export function sortRegions(names: Iterable<string>, order: string[]): string[] {
 	const rank = (name: string) => {
 		if (name === NATIONAL) return -1;

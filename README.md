@@ -6,7 +6,7 @@ one day at a time. Click a front page to read the PDF.
 
 - **One flat folder.** All PDFs live together; the app only reads them.
 - **Regions are logical.** A small `regions.json` maps mastheads to regions; anything unmatched is
-  **National**. Re-filing a paper means editing the mapping, never moving files.
+  **Nacional**. Re-filing a paper means editing the mapping, never moving files.
 - **A day at a time.** The stand opens on the most recent day that has papers, with previous/next
   day, a list of every available day, a region filter and a search. Every masthead also has a
   back-issues page.
@@ -63,7 +63,7 @@ logged and the last good mapping stays in use.
   "Diario Sur" but not "Surf"; `heraldo de aragon` matches "Heraldo de Aragón".
 - The **longest** matching pattern wins across all regions, so `el correo gallego` (Galicia) beats
   `el correo` (País Vasco).
-- Unmatched mastheads go to **National**, which is always listed first; the other regions follow
+- Unmatched mastheads go to **Nacional**, which is always listed first; the other regions follow
   the order of the file.
 - Avoid short, ambiguous patterns (a common word like `hoy` would catch unrelated titles).
 

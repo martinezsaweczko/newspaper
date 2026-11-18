@@ -5,7 +5,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { sanitizeNext } from './next.ts';
 import { isCrossSiteForm } from './origin.ts';
 import { signSession, verifySession } from './session.ts';
-import { createThrottle } from './throttle.ts';
+import { createThrottle, throttleMessage } from './throttle.ts';
 import {
 	addUser,
 	authenticate,
@@ -121,6 +121,13 @@ describe('login throttle', () => {
 		t.fail('other', 0);
 		t.reset('other');
 		expect(t.retryAfter('other', 1)).toBe(0);
+	});
+
+	it('words the wait in Spanish with singular and plural minutes', () => {
+		expect(throttleMessage(1)).toBe('Demasiados intentos. Vuelve a intentarlo en 1 minuto.');
+		expect(throttleMessage(60)).toBe('Demasiados intentos. Vuelve a intentarlo en 1 minuto.');
+		expect(throttleMessage(61)).toBe('Demasiados intentos. Vuelve a intentarlo en 2 minutos.');
+		expect(throttleMessage(300)).toBe('Demasiados intentos. Vuelve a intentarlo en 5 minutos.');
 	});
 });
 

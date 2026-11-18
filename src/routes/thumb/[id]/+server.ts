@@ -10,7 +10,7 @@ import type { RequestHandler } from './$types';
 /** The edition's front page as JPEG (page 1, rendered once and cached on disk). */
 export const GET: RequestHandler = async ({ params, request }) => {
 	const edition = resolveId(config.newspaperDir, params.id);
-	if (!edition) return new Response('Not found', { status: 404 });
+	if (!edition) return new Response('No encontrado', { status: 404 });
 
 	const masthead = parseEditionName(edition.rel, edition.stat.mtime).masthead;
 	const started = performance.now();
@@ -35,7 +35,7 @@ export const GET: RequestHandler = async ({ params, request }) => {
 	} catch (err) {
 		recordThumbnail('error', seconds());
 		console.warn(`[thumb] ${edition.rel}: ${(err as Error).message}`);
-		return new Response('Front page unavailable', {
+		return new Response('Portada no disponible', {
 			status: 502,
 			headers: { 'cache-control': 'no-store' }
 		});

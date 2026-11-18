@@ -7,7 +7,7 @@ run, style **Achromatic ledger**, seed 1636931064), adapted to a newspaper.
 ## Idea
 
 The app's chrome is a newspaper's top fold. The product name is set as a nameplate over a double
-rule, the selected day is the dateline (`Tuesday, 17 November 2026`, the page's `h1`), and every
+rule, the selected day is the dateline (`Martes, 17 de noviembre de 2026`, the page's `h1`; UI copy is Spanish), and every
 region is a column head (a heavy ink rule, the region name, a count) standing over its shelf of
 front pages. The front pages are the only pictures and the biggest thing on every screen; the
 interface around them stays ink on newsprint.
@@ -16,7 +16,7 @@ interface around them stays ink on newsprint.
 
 | Screen          | Question                                  | Answered by                                         |
 | --------------- | ----------------------------------------- | --------------------------------------------------- |
-| `/`             | What is on the stand today?               | Front pages grouped by region, National first       |
+| `/`             | What is on the stand today?               | Front pages grouped by region, Nacional first       |
 | `/paper/[slug]` | What back issues of this paper are there? | Its front pages, newest first, with a download link |
 | `/login`        | Who are you?                              | A sign-in form under the nameplate                  |
 
@@ -71,7 +71,7 @@ Two faces, both self-hosted from npm (`@fontsource-variable/*`), no external req
 - `Nameplate.svelte` — the wordmark and its double rule (`stand` size on app pages, `cover` on login).
 - `SiteHeader.svelte` — skip link, "Private newsstand", the signed-in user and Sign out.
 - `FrontPage.svelte` — the front page linking to the PDF, alt text
-  `"<Masthead>, front page, dd/mm/yyyy"`, masthead caption linking to the back issues. On a render
+  `"Portada de <Masthead>, dd/mm/yyyy"`, masthead caption linking to the back issues. On a render
   failure it becomes a sheet with the masthead set in Newsreader and "Front page unavailable".
 - Buttons: one style, ink fill, 6px radius, 44-48px tall. Quiet actions are text links.
 
