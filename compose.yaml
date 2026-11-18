@@ -8,9 +8,19 @@ services:
     restart: unless-stopped
     ports:
       - '${NEWSPAPER_PORT:-3000}:3000'
+      # Prometheus /metrics. Loopback only by default. For a Prometheus on another LAN host set
+      # METRICS_BIND to this machine's LAN IP (e.g. 192.168.1.10), never 0.0.0.0 on a host with a
+      # public interface. For a Prometheus container on the same compose network, delete this line
+      # and scrape newspaper:9464 directly.
+      - '${METRICS_BIND:-127.0.0.1}:${METRICS_HOST_PORT:-9464}:9464'
     environment:
       SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env (32+ random characters)}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      # source addresses allowed to scrape /metrics (comma-separated CIDRs; default = private ranges)
+      METRICS_ALLOW: ${METRICS_ALLOW:-}
+      # traces: set an OTLP/HTTP endpoint (e.g. http://jaeger:4318) to export; unset = no traces
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-newspaper}
       # behind a reverse proxy that sets X-Forwarded-For, uncomment:
       # ADDRESS_HEADER: X-Forwarded-For
     volumes:

@@ -53,6 +53,19 @@ See README.md for the product overview, configuration and deploy.
 - Front pages: `/thumb/[id]` renders page 1 with `pdftoppm` (poppler-utils, `execFile`, timeout),
   cached in `DATA_DIR/thumbs/` keyed by path+mtime+size, in-flight dedupe, small concurrency cap.
 - PDFs: `/pdf/[id]` streams with HTTP Range (206) and inline disposition; `?download=1` for attachment.
+- Observability: `src/instrumentation.server.ts` (loaded before the app, never by `vite build`)
+  calls `startTelemetry(process.env)` in `src/lib/server/observability/` (state on globalThis so the
+  dev server's re-imports start nothing twice). Traces: `tracing.server` in `vite.config.ts`; the
+  NodeSDK starts only when `OTEL_EXPORTER_OTLP_ENDPOINT`/`OTEL_TRACES_EXPORTER` is set (fs/dns/net
+  instrumentation off); custom spans via `withSpan` in `trace.ts`. The app's own bundle is excluded
+  from import-in-the-middle (wrapping it broke Kit's runtime: every request a 500). Metrics: our
+  own MeterProvider + `PrometheusExporter({ preventServerStart: true })`, served by our own
+  `node:http` server on `METRICS_PORT` (9464, `0` disables, busy port = warning) that checks the
+  socket peer against `METRICS_ALLOW` CIDRs (`cidr.ts`, pure, never X-Forwarded-For); 404 for
+  other paths, 403 for other sources. Instruments live in `metrics.ts` (API global, created
+  lazily); labels stay low-cardinality (route id, never path/user/id/filename). OTel packages are
+  `dependencies` (external in the bundle), so the image ships pruned `node_modules`; compose
+  publishes 9464 on `${METRICS_BIND:-127.0.0.1}` only.
 
 ## Design
 
