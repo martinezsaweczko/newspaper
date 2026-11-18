@@ -1,6 +1,7 @@
 import { contentDisposition, parseRange } from '#lib/server/http/range.ts';
 import { resolveId } from '#lib/server/library/ids.ts';
 import { config } from '#lib/server/config.ts';
+import { addPdfBytes } from '#lib/server/observability/metrics.ts';
 import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
 import type { RequestHandler } from './$types';
@@ -43,7 +44,12 @@ export const GET: RequestHandler = ({ params, request, url }) => {
 	const body =
 		request.method === 'HEAD' || length === 0
 			? null
-			: (Readable.toWeb(createReadStream(edition.abs, { start, end })) as ReadableStream);
+			: (Readable.toWeb(
+					// counted as the bytes actually leave the file, so aborted downloads count less
+					createReadStream(edition.abs, { start, end }).on('data', (chunk) =>
+						addPdfBytes(chunk.length)
+					)
+				) as ReadableStream);
 
 	if (range.kind === 'partial') {
 		return new Response(body, {

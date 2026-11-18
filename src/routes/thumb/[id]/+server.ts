@@ -2,6 +2,7 @@ import { thumbnailer } from '#lib/server/library/index.ts';
 import { resolveId } from '#lib/server/library/ids.ts';
 import { config } from '#lib/server/config.ts';
 import { parseEditionName } from '#lib/server/library/parse.ts';
+import { recordThumbnail } from '#lib/server/observability/metrics.ts';
 import { withSpan } from '#lib/server/observability/trace.ts';
 import { readFile } from 'node:fs/promises';
 import type { RequestHandler } from './$types';
@@ -12,6 +13,8 @@ export const GET: RequestHandler = async ({ params, request }) => {
 	if (!edition) return new Response('Not found', { status: 404 });
 
 	const masthead = parseEditionName(edition.rel, edition.stat.mtime).masthead;
+	const started = performance.now();
+	const seconds = () => (performance.now() - started) / 1000;
 	let thumb;
 	try {
 		thumb = await withSpan(
@@ -28,7 +31,9 @@ export const GET: RequestHandler = async ({ params, request }) => {
 				return result;
 			}
 		);
+		recordThumbnail(thumb.cached ? 'hit' : 'miss', seconds());
 	} catch (err) {
+		recordThumbnail('error', seconds());
 		console.warn(`[thumb] ${edition.rel}: ${(err as Error).message}`);
 		return new Response('Front page unavailable', {
 			status: 502,

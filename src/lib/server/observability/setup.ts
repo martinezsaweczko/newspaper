@@ -1,8 +1,10 @@
 /**
  * Starts telemetry once per process (the dev server re-imports the instrumentation file, so the
- * state lives on globalThis). Called from `src/instrumentation.server.ts`.
+ * state lives on globalThis). Called from `src/instrumentation.server.ts`, which adapter-node runs
+ * at startup and `vite build` never runs, so neither the SDK nor the metrics port starts at build.
  */
 import { telemetryConfig, type TelemetryConfig } from './config.ts';
+import { startMetrics } from './metrics-setup.ts';
 import { startTracing } from './tracing.ts';
 
 interface TelemetryState {
@@ -26,6 +28,9 @@ export function startTelemetry(env: Record<string, string | undefined>): Telemet
 		stops.push(() => sdk.shutdown());
 		console.log(`[telemetry] tracing on (service ${config.serviceName})`);
 	}
+	// After the NodeSDK: its instrumentations then keep a no-op meter, and this provider only
+	// carries the app's own instruments.
+	if (config.metrics) stops.push(startMetrics({ ...config, metrics: config.metrics }));
 
 	const state: TelemetryState = {
 		config,

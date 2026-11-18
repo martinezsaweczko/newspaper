@@ -4,6 +4,7 @@ import { sanitizeNext } from '#lib/server/auth/next.ts';
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, signSession } from '#lib/server/auth/session.ts';
 import { authenticate } from '#lib/server/auth/users.ts';
 import { config, sessionSecret } from '#lib/server/config.ts';
+import { recordLogin } from '#lib/server/observability/metrics.ts';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -23,6 +24,7 @@ export const actions: Actions = {
 
 		const wait = loginThrottle.retryAfter(key);
 		if (wait > 0) {
+			recordLogin('throttled');
 			const minutes = Math.ceil(wait / 60);
 			return fail(429, {
 				username,
@@ -30,16 +32,19 @@ export const actions: Actions = {
 			});
 		}
 		if (!username || !password) {
+			recordLogin('failure');
 			return fail(400, { username, message: 'Enter your username and password.' });
 		}
 
 		const user = await authenticate(config.dataDir, username, password);
 		if (!user) {
 			loginThrottle.fail(key);
+			recordLogin('failure');
 			return fail(400, { username, message: 'That username and password do not match.' });
 		}
 
 		loginThrottle.reset(key);
+		recordLogin('success');
 		cookies.set(SESSION_COOKIE, signSession(user, sessionSecret()), {
 			path: '/',
 			httpOnly: true,

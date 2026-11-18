@@ -2,6 +2,7 @@ import type { Edition } from '#lib/types.ts';
 import { config } from '../config.ts';
 import { createThumbnailer } from '../thumbs.ts';
 import { createRegionStore } from './regions.ts';
+import { setEditionCount } from '../observability/metrics.ts';
 import { withSpan } from '../observability/trace.ts';
 import { createScanner, scanFolder } from './scan.ts';
 import path from 'node:path';
@@ -10,6 +11,7 @@ const scan = createScanner(config.newspaperDir, 5000, (root) =>
 	withSpan('newspaper.library.scan', {}, (span) => {
 		const editions = scanFolder(root);
 		span.setAttribute('newspaper.editions', editions.length);
+		setEditionCount(editions.length);
 		return editions;
 	})
 );
