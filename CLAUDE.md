@@ -88,6 +88,19 @@ Multi-stage `Containerfile` (node:24-slim + poppler-utils, runs as `node`, HEALT
 port 3000). `compose.yaml` mounts the shared folder read-only at `/newspapers` and a named volume
 at `/data`; config in `.env` (see `.env.example`).
 
+## CI/CD and release
+
+- `.github/workflows/pipeline.yml` is the entry pipeline (pull requests, push to `main`, `vX.Y.Z`
+  tags, with concurrency): job `test` calls the reusable `ci.yml` (also `workflow_dispatch`):
+  Node from `.nvmrc`, `npm ci`, `poppler-utils`, lint, check, unit tests, build. On a `vX.Y.Z` tag
+  that is on `main`, job `image` builds with `podman build --format docker` (keeps HEALTHCHECK) plus
+  OCI labels, runs `scripts/smoke-image.sh` (synthetic editions, a CLI-made user, `/login`, a real
+  login, `/thumb/<id>` as `image/jpeg`, `podman healthcheck run`, `:9464/metrics` with `newspaper_`
+  series; logs on failure) and pushes `ghcr.io/<owner>/<repo>` tagged X.Y.Z / X.Y / latest; job
+  `release` runs `gh release create --generate-notes`.
+- Workflows cannot run locally: run `scripts/smoke-image.sh localhost/newspaper:smoke` after a
+  local `podman build --format docker -t newspaper:smoke .` instead.
+
 ## Gotchas
 
 - Node 24 (see `.nvmrc`).
