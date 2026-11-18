@@ -1,0 +1,31 @@
+name: CI
+
+# Reusable test pipeline. It is called by pipeline.yml (the entry workflow for push, tag and
+# pull_request events) so the tests gate the image publish, and can also be started by hand from
+# the Actions tab.
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # The front-page spec renders real PDFs with pdftoppm.
+      - name: Install poppler-utils
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends poppler-utils
+      - run: npm run lint
+      - run: npm run check
+      - name: Unit tests
+        run: npm run test:unit -- --run
+      - run: npm run build
