@@ -55,8 +55,15 @@ export function scanFolder(root: string): ScannedEdition[] {
 	return editions;
 }
 
-/** Re-scans at most every `ttlMs`, or right away when the folder's mtime changes. */
-export function createScanner(root: string, ttlMs = 5000) {
+/**
+ * Re-scans at most every `ttlMs`, or right away when the folder's mtime changes. `scan` is
+ * injectable so the library can wrap it in a span.
+ */
+export function createScanner(
+	root: string,
+	ttlMs = 5000,
+	scan: (root: string) => ScannedEdition[] = scanFolder
+) {
 	let cached: ScannedEdition[] = [];
 	let at = 0;
 	let dirMtime = -1;
@@ -68,7 +75,7 @@ export function createScanner(root: string, ttlMs = 5000) {
 			// missing folder: scanFolder returns []
 		}
 		if (mtime !== dirMtime || now - at > ttlMs) {
-			cached = scanFolder(root);
+			cached = scan(root);
 			at = now;
 			dirMtime = mtime;
 		}

@@ -45,12 +45,14 @@ describe.skipIf(!hasPdftoppm)('createThumbnailer (pdftoppm)', () => {
 		);
 		const [a, b] = await Promise.all([thumbs.get(src), thumbs.get(src)]);
 		expect(a.file).toBe(b.file);
+		expect([a.cached, b.cached]).toEqual([false, false]);
 		const jpeg = readFileSync(a.file);
 		expect(jpeg.subarray(0, 3)).toEqual(Buffer.from([0xff, 0xd8, 0xff]));
 		expect(thumbs.stats()).toEqual({ running: 0, queued: 0, inFlight: 0 });
 
 		const mtime = statSync(a.file).mtimeMs;
-		await thumbs.get(src); // served from the cache, not re-rendered
+		const again = await thumbs.get(src); // served from the cache, not re-rendered
+		expect(again.cached).toBe(true);
 		expect(statSync(a.file).mtimeMs).toBe(mtime);
 	});
 

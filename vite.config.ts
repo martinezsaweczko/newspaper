@@ -15,7 +15,10 @@ export default defineConfig({
 			adapter: adapter(),
 			// Kit's origin check compares schemes and adapter-node assumes https, which would reject
 			// every form POST on a plain-http LAN. src/lib/server/auth/origin.ts checks the host instead.
-			csrf: { trustedOrigins: ['*'] }
+			csrf: { trustedOrigins: ['*'] },
+			// OpenTelemetry spans for handle, load, actions and +server handlers. They are no-ops unless
+			// src/instrumentation.server.ts registered an exporter (OTEL_EXPORTER_OTLP_ENDPOINT etc.).
+			tracing: { server: true }
 		})
 	],
 	test: {

@@ -27,6 +27,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const session = verifySession(event.cookies.get(SESSION_COOKIE), sessionSecret());
 	event.locals.user = session && users.has(session.user) ? session.user : null;
 	if (!event.locals.user && config.authDisabled) event.locals.user = DEV_USER;
+	if (event.locals.user) event.tracing.root.setAttribute('newspaper.user', event.locals.user);
 
 	const { pathname, search } = event.url;
 	if (!event.locals.user && !isPublic(pathname)) {

@@ -103,11 +103,14 @@ export function createThumbnailer({
 	}
 
 	return {
-		/** Path of the cached JPEG for this source, rendering it first when needed. */
-		async get(source: ThumbSource, now = Date.now()): Promise<{ file: string; key: string }> {
+		/** The cached JPEG for this source, rendered first when needed (`cached` false = rendered now). */
+		async get(
+			source: ThumbSource,
+			now = Date.now()
+		): Promise<{ file: string; key: string; cached: boolean }> {
 			const key = thumbKey(source);
 			const file = path.join(cacheDir, `${key}.jpg`);
-			if (existsSync(file)) return { file, key };
+			if (existsSync(file)) return { file, key, cached: true };
 
 			const failedAt = failures.get(key);
 			if (failedAt !== undefined && now - failedAt < failureTtlMs) {
@@ -124,7 +127,7 @@ export function createThumbnailer({
 					.finally(() => inFlight.delete(key));
 				inFlight.set(key, pending);
 			}
-			return { file: await pending, key };
+			return { file: await pending, key, cached: false };
 		},
 		/** For tests and diagnostics. */
 		stats: () => ({ running, queued: queue.length, inFlight: inFlight.size })
