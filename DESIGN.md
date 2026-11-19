@@ -85,7 +85,9 @@ Two faces, both self-hosted from npm (`@fontsource-variable/*`), no external req
 
 - Visible 3px focus ring in `--t-signal`, offset from the element.
 - Every control has a label (visually hidden where the form is self-evident), touch targets are
-  44px, the result count is announced in a polite live region, errors are tied to the form.
+  44px, the result count is announced in a polite live region. A login error is tied to both fields
+  (`aria-describedby="login-error"`, `aria-invalid`) and focus returns to the password when the
+  username came back filled, else to the username (`autofocus`, so it works without JS).
 - Dates are written through `src/lib/format/date.ts` only.
 - Counts are written through `src/lib/format/count.ts`: an edition is always a **portada** in a
   count (stand header, region heads, back issues; "periódico" names the masthead). Filtered, the
