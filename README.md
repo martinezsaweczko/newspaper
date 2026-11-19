@@ -4,9 +4,11 @@ A private newsstand behind Google sign-in and admin approval. Point it at one sh
 it shows every edition as its rendered **front page** (never a file name), grouped by **region**,
 one day at a time. Click a front page to read the PDF.
 
-- **One flat folder.** All PDFs live together; the app only reads them.
+- **One shared folder.** PDFs at the top level or in subfolders (up to 4 levels deep); the app
+  only reads them. Subfolders are storage only: they never become regions.
 - **Regions are logical.** A small `regions.json` maps mastheads to regions; anything unmatched is
-  **Nacional**. Re-filing a paper means editing the mapping, never moving files.
+  **Nacional**. Re-filing a paper means editing the mapping, never moving files, and a
+  `nacional/` or `magazine/` subfolder says nothing about the region.
 - **A day at a time.** The stand opens on the most recent day up to today that has papers (an
   issue dated ahead, like a weekly magazine, is one "next day" away), with previous/next
   day, a list of every available day, a region filter and a search. Every masthead also has a
@@ -75,6 +77,21 @@ number such as `Canarias7`, `20 Minutos` or `Las 24 Horas`.
 
 Hidden files and anything that is not a `.pdf` are skipped, and so is anything on the ignore list.
 
+### Subfolders
+
+The shared folder may be organised in subfolders, e.g. `nacional/`, `internacional/`,
+`magazine/`. PDFs are read at any depth up to four folders below `NEWSPAPER_DIR`
+(`a/b/c/d/x.pdf`); deeper files are not listed.
+
+- Folders are **storage only**: they never set the region (that is `regions.json`) and never
+  become part of the masthead, which comes from the file name alone.
+- The same masthead and day in two folders is **one edition**, chosen by the copy rule above.
+- Hidden folders (`.name`) are skipped and symlinked folders are never followed, so a link loop
+  or a link out of the share cannot be listed.
+- The ignore list matches the **file name** only, not its folders.
+- New files show up on the next request: the app rescans when any folder's modification time
+  changes, and at least every 5 s otherwise, re-parsing only new or changed files.
+
 ## Regions (`regions.json`)
 
 On first start the app copies `src/lib/server/regions.default.json` to `DATA_DIR/regions.json`
@@ -109,7 +126,8 @@ request; a broken edit is logged and the last good list stays in use.
 { "patterns": ["curriculum", "cv", "acta de reunion"] }
 ```
 
-- Patterns match **whole words** of the file name (without `.pdf`), ignoring case and accents:
+- Patterns match **whole words** of the file name (without `.pdf` and without its folders),
+  ignoring case and accents:
   `cv` hides `CV_David.pdf` but not `Cvitae.pdf`; `acta de reunion` hides `Acta de reunión.pdf`.
 - Ignored files are left out of the stand, the back issues and every count, and their `/pdf` and
   `/thumb` links answer 404. The files themselves are never touched.
@@ -118,7 +136,7 @@ request; a broken edit is logged and the last good list stays in use.
 
 | Variable                            | Default        | Meaning                                                                                                               |
 | ----------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `NEWSPAPER_DIR`                     | `./newspapers` | The shared flat folder of PDFs (read-only)                                                                            |
+| `NEWSPAPER_DIR`                     | `./newspapers` | The shared folder of PDFs, subfolders included (read-only)                                                            |
 | `DATA_DIR`                          | `./data`       | `users.json`, `regions.json`, `ignore.json`, `thumbs/` (front-page cache)                                             |
 | `SESSION_SECRET`                    | —              | Cookie signing key, **required in production** (32+ characters). Development falls back to a fixed key with a warning |
 | `COOKIE_SECURE`                     | `false`        | `true` when served over https                                                                                         |

@@ -8,15 +8,16 @@ import { parseEditionName } from './parse.ts';
 import { createIgnoreStore } from './ignore.ts';
 import { setEditionCount } from '../observability/metrics.ts';
 import { withSpan } from '../observability/trace.ts';
-import { createScanner, scanFolder } from './scan.ts';
+import { createScanner, scanTree } from './scan.ts';
 import path from 'node:path';
 
-const scan = createScanner(config.newspaperDir, 5000, (root) =>
+const scan = createScanner(config.newspaperDir, 5000, (root, previous) =>
 	withSpan('newspaper.library.scan', {}, (span) => {
-		const editions = scanFolder(root);
-		span.setAttribute('newspaper.editions', editions.length);
-		setEditionCount(editions.length);
-		return editions;
+		const result = scanTree(root, previous);
+		span.setAttribute('newspaper.editions', result.editions.length);
+		span.setAttribute('newspaper.folders', result.dirs.length);
+		setEditionCount(result.editions.length);
+		return result;
 	})
 );
 const regions = createRegionStore(config.dataDir);
@@ -25,13 +26,14 @@ const ignored = createIgnoreStore(config.dataDir);
 export const thumbnailer = createThumbnailer({ cacheDir: path.join(config.dataDir, 'thumbs') });
 
 /**
- * Every edition in the shared folder with its region, plus the region order of regions.json.
- * Files on the ignore list are left out, and download copies of one edition count once.
+ * Every edition in the shared folder (subfolders included) with its region, plus the region order
+ * of regions.json. Files on the ignore list (matched on the file name) are left out, and download
+ * copies of one edition, or the same edition in two subfolders, count once.
  */
 export function library(): { editions: Edition[]; regionOrder: string[] } {
 	const map = regions.get();
 	const ignore = ignored.get();
-	const editions = dedupeEditions(scan().filter((e) => !ignore(e.file))).map((e) => ({
+	const editions = dedupeEditions(scan().filter((e) => !ignore(e.name))).map((e) => ({
 		id: e.id,
 		masthead: e.masthead,
 		slug: e.slug,
@@ -60,7 +62,7 @@ export interface EditionFacts {
 }
 
 export function editionFacts(edition: ResolvedEdition): EditionFacts {
-	const parsed = parseEditionName(edition.rel, edition.stat.mtime);
+	const parsed = parseEditionName(edition.name, edition.stat.mtime);
 	return {
 		path: edition.rel,
 		masthead: parsed.masthead,
