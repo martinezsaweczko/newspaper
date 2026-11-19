@@ -55,7 +55,15 @@ export type Access =
 	| { kind: 'redirect'; location: string }
 	| { kind: 'deny'; status: number; message: string };
 
-const PUBLIC = new Set(['/login', '/auth/google', '/auth/google/callback', '/robots.txt']);
+/** The privacy policy and the terms: public for Google's consent screen, and for any account. */
+export const LEGAL_PATHS = ['/privacidad', '/condiciones'] as const;
+const PUBLIC = new Set<string>([
+	'/login',
+	'/auth/google',
+	'/auth/google/callback',
+	'/robots.txt',
+	...LEGAL_PATHS
+]);
 export const PENDING_PATH = '/pendiente';
 export const BLOCKED_PATH = '/bloqueado';
 

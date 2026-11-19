@@ -57,5 +57,15 @@ export const variables = defineEnvVars({
 		description:
 			'Comma-separated emails that become approved admins on their first Google sign-in.',
 		schema: (value) => optional(value) ?? ''
+	},
+	LEGAL_OPERATOR_NAME: {
+		description:
+			'Who runs this newsstand, named as the data controller on /privacidad and /condiciones. Default: a generic "el administrador de este quiosco".',
+		schema: (value) => optional(value)?.trim()
+	},
+	LEGAL_CONTACT_EMAIL: {
+		description:
+			'Contact address for privacy requests on /privacidad and /condiciones. Default: the first ADMIN_EMAILS address, or none.',
+		schema: (value) => optional(value)?.trim()
 	}
 });

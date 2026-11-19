@@ -7,6 +7,8 @@ import {
 	GOOGLE_CLIENT_ID,
 	GOOGLE_CLIENT_SECRET,
 	GOOGLE_ISSUER,
+	LEGAL_CONTACT_EMAIL,
+	LEGAL_OPERATOR_NAME,
 	NEWSPAPER_DIR,
 	PUBLIC_ORIGIN,
 	SESSION_SECRET
@@ -15,6 +17,7 @@ import { dev } from '$app/env';
 import path from 'node:path';
 import type { CurrentUser } from '../types.ts';
 import { parseAdminEmails } from './auth/accounts.ts';
+import { legalContact } from './auth/legal.ts';
 import { localAdmin } from './auth/current.ts';
 
 /** Resolved runtime configuration (env declared in src/env.ts). */
@@ -28,7 +31,9 @@ export const config = {
 	/** Emails that become approved admins when their account is created (lowercase). */
 	adminEmails: parseAdminEmails(ADMIN_EMAILS),
 	/** Google sign-in, or null when it is not configured (the button is hidden, routes 404). */
-	google: googleConfig()
+	google: googleConfig(),
+	/** Who the legal pages name as responsible, and where privacy requests go. */
+	legal: legalContact(LEGAL_OPERATOR_NAME, LEGAL_CONTACT_EMAIL, ADMIN_EMAILS)
 };
 
 function googleConfig() {

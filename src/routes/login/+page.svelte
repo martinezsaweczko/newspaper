@@ -154,4 +154,20 @@
 	</details>
 
 	<PrivacyNotice class="mt-8" />
+	<nav
+		aria-label="Información legal"
+		class="mt-3 flex flex-wrap items-center gap-x-2 text-[13px] text-ink-soft"
+	>
+		<a
+			href={resolve('/privacidad')}
+			class="-my-3 flex min-h-11 items-center underline-offset-4 hover:text-ink hover:underline"
+			>Política de privacidad</a
+		>
+		<span aria-hidden="true">·</span>
+		<a
+			href={resolve('/condiciones')}
+			class="-my-3 flex min-h-11 items-center underline-offset-4 hover:text-ink hover:underline"
+			>Condiciones del servicio</a
+		>
+	</nav>
 </main>

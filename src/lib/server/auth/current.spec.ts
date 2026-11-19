@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CurrentUser } from '../../types.ts';
 import type { UserRow } from '../db/schema.ts';
-import { decideAccess, localAdmin, resolveUser, userLabel } from './current.ts';
+import { decideAccess, isPublic, localAdmin, resolveUser, userLabel } from './current.ts';
 import {
 	signGoogleSession,
 	signSession,
@@ -113,6 +113,28 @@ describe('decideAccess', () => {
 		for (const path of ['/login', '/auth/google', '/auth/google/callback', '/_app/x.js']) {
 			expect(go(null, path)).toEqual({ kind: 'pass' });
 		}
+	});
+
+	it('lets anyone, in any account state, read the privacy policy and the terms', () => {
+		const accounts = [
+			null,
+			user({ status: 'pending' }),
+			user({ status: 'blocked' }),
+			user(),
+			localAdmin('root')
+		];
+		for (const account of accounts) {
+			for (const path of ['/privacidad', '/condiciones', '/%70rivacidad']) {
+				expect(go(account, path), `${account?.status ?? 'anonymous'} ${path}`).toEqual({
+					kind: 'pass'
+				});
+				expect(go(account, path, 'HEAD')).toEqual({ kind: 'pass' });
+			}
+		}
+		expect(isPublic('/privacidad')).toBe(true);
+		expect(isPublic('/condiciones')).toBe(true);
+		expect(isPublic('/privacidad/otra')).toBe(false);
+		expect(isPublic('/')).toBe(false);
 	});
 
 	it('sends the signed-out to /login with next, and refuses their posts', () => {
