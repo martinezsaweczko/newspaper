@@ -1,6 +1,6 @@
 # CLAUDE.md — NewsPaper (private newsstand)
 
-A password-protected web app that turns a shared folder of newspaper PDFs into a newsstand:
+A private web app (Google sign-in with admin approval) that turns a shared folder of newspaper PDFs into a newsstand:
 every edition is shown as its rendered front page (never the filename), grouped by region,
 and opens as a PDF on click.
 
@@ -14,7 +14,10 @@ See README.md for the product overview, configuration and deploy.
 - `npm run lint` / `npm run format` — prettier + eslint
 - `npm run test:unit -- --run` — vitest
 - `npm run build` — production build to `build/` (`node build`)
-- `npm run user:add -- <name>` / `npm run user:remove -- <name>` / `npm run user:logout-all -- <name>` — manage logins
+- `npm run user:add -- <name>` / `npm run user:remove -- <name>` / `npm run user:logout-all -- <name>` — manage local admins (users.json, the fallback login)
+- `npm run db:up` (`podman compose up -d db`) — the dev MySQL on 127.0.0.1:3307; `npm run dev` and the DB tests need it
+- `npm run db:generate` — write a migration into `drizzle/` after changing `src/lib/server/db/schema.ts` (commit both)
+- `npm run db:reset -- --yes` — dev only: drop every table of the loopback `DATABASE_URL` database
 - `node scripts/make-samples.mjs` — generate synthetic sample editions into `newspapers/`
 - `podman build -t newspaper .` (or docker) — container image; `podman compose up -d` — run it
 
@@ -57,12 +60,35 @@ See README.md for the product overview, configuration and deploy.
 
 ## Backend
 
+- DB: MySQL 8.4 (compose `db` service) via Drizzle + mysql2. Schema `src/lib/server/db/schema.ts`
+  (`users`, `reading_events`), migrations in `/drizzle` from `npm run db:generate`, applied by the
+  `init` hook at start (after `waitForDb`), never during `vite build`. `DATABASE_URL` is required
+  (Kit validates env at build time: the Containerfile builds with a placeholder that is not baked
+  in). Pool on globalThis outside production (`getDbHandle`, no HMR leaks), `timezone: 'Z'`, all
+  times DATETIME in UTC set by the app. DB tests use `createTestDb()` (`db/test-db.ts`): a
+  throwaway `newspaper_test_<random>` via `TEST_DATABASE_ADMIN_URL` (default root on :3307), dropped
+  after the suite; they skip when MySQL is unreachable.
+- Google sign-in: OIDC code flow with PKCE S256 + state + nonce (`auth/oidc.ts`, `auth/google.ts`,
+  `jose` JWKS), state/nonce/verifier in one signed 10-minute `np_oidc` cookie on `/auth/google`.
+  The callback (a GET: state is its CSRF check) verifies iss/aud/exp/nonce, requires
+  `email_verified`, then `signInGoogleUser` upserts by `google_sub` (links a pre-created row by
+  email). New accounts are `pending`/`user`; `ADMIN_EMAILS` (case-insensitive, at creation only)
+  makes them `approved`/`admin`. Off (button hidden, routes 404) without `GOOGLE_CLIENT_ID`,
+  `GOOGLE_CLIENT_SECRET` and `PUBLIC_ORIGIN`. `GOOGLE_ISSUER` points tests at `auth/fake-oidc.ts`.
+  Sessions: `{k:'g', id, exp, v}` for Google (v = `users.session_version`) next to the local
+  `{u, exp, v}`; `locals.user` is `CurrentUser` (`{ id, kind, email, name, role, status }`,
+  `#lib/types.ts`) from `resolveUser` with a 5 s per-id cache (`user-cache.ts`) that admin actions
+  invalidate. The guard is `decideAccess` (`auth/current.ts`): signed out → `/login`, pending →
+  `/pendiente`, blocked → `/bloqueado`, only approved read, only admins reach `/admin/**` (403).
+  Local users.json accounts are approved admins. Admin logic in `src/lib/server/admin/users.ts`
+  (approve/block/unblock/promote/demote; no self-block/demote, never the last admin; block and role
+  changes bump `session_version`); `/admin/usuarios` only parses forms.
 - Auth: `DATA_DIR/users.json` with scrypt hashes (node:crypto, no auth deps), HMAC-signed session
   cookie (`SESSION_SECRET`, httpOnly, sameSite=lax, `COOKIE_SECURE` off by default for plain-http LAN).
   Tokens carry the user's `sessionVersion` (`v`; absent = 1 for pre-version tokens); a password
   change or `user:logout-all` bumps it, revoking every session. `hooks.server.ts` checks it via the
   cached `createUserDirectory` (stat per request, re-read on change) and guards every route except
-  `/login` and static assets; `next` redirects are sanitised to same-site relative paths, checked
+  `/login`, `/auth/google/**` and static assets; `next` redirects are sanitised to same-site relative paths, checked
   after dot-segment normalisation. In-memory login throttle (`createLoginThrottle`): per IP+user 5,
   per user 10, per IP 50 failures / 15 min, swept and capped.
 - Front pages: `/thumb/[id]` renders page 1 with `pdftoppm` (poppler-utils, `execFile`, timeout),
@@ -121,3 +147,5 @@ at `/data`; config in `.env` (see `.env.example`).
 - Node 24 (see `.nvmrc`).
 - `pdftoppm` must be on PATH for front pages (`apt install poppler-utils`).
 - Form POSTs over plain http: check login against `node build`, not only the dev server.
+- `npm run dev`, `npm run build` and the DB tests need `DATABASE_URL` (in `.env`) and, for the
+  first and last, the dev database running (`npm run db:up`). The host port is 3307, not 3306.

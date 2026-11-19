@@ -1,6 +1,6 @@
 # NewsPaper
 
-A private, password-protected newsstand. Point it at one shared folder full of newspaper PDFs and
+A private newsstand behind Google sign-in and admin approval. Point it at one shared folder full of newspaper PDFs and
 it shows every edition as its rendered **front page** (never a file name), grouped by **region**,
 one day at a time. Click a front page to read the PDF.
 
@@ -12,19 +12,30 @@ one day at a time. Click a front page to read the PDF.
   day, a list of every available day, a region filter and a search. Every masthead also has a
   back-issues page.
 - **Fast front pages.** Page 1 is rendered once with `pdftoppm` and cached on disk.
+- **Sign in with Google, then wait for approval.** New accounts are pending until an admin
+  approves them; admins can block accounts and promote others. A users.json login remains as an
+  admin-only fallback. Reading activity (which papers, when) is recorded and kept.
 
-SvelteKit 3 + Svelte 5 + Tailwind 4, Node adapter, shipped as a container. No database.
+SvelteKit 3 + Svelte 5 + Tailwind 4, Node adapter, MySQL 8.4 (Drizzle), shipped as a container.
 
 ## Quick start (development)
 
-Needs Node 24 and `pdftoppm` (`apt install poppler-utils`, `brew install poppler`).
+Needs Node 24, `pdftoppm` (`apt install poppler-utils`, `brew install poppler`) and podman (or
+docker) for the database.
 
 ```sh
 npm install
+cp .env.example .env                   # DATABASE_URL already points at the dev database
+npm run db:up                          # podman compose up -d db: MySQL 8.4 on 127.0.0.1:3307
 node scripts/make-samples.mjs          # optional: 12 synthetic editions in ./newspapers
-npm run user:add -- ana                # prompts for a password (no echo)
-npm run dev                            # http://localhost:5173
+npm run user:add -- ana                # a local admin; prompts for a password (no echo)
+npm run dev                            # http://localhost:5173 (migrates the database on start)
 ```
+
+The dev database listens on host port 3307 so it never clashes with another MySQL on 3306. It
+keeps running in the background; `podman compose stop db` stops it. Migrations in `drizzle/` are
+applied automatically when the server starts. Without Google configured, `/login` offers only the
+local admin form; see [Google sign-in](#google-sign-in) to add the Google button.
 
 Drop real PDFs into `./newspapers` (git-ignored) or point `NEWSPAPER_DIR` elsewhere.
 
@@ -110,13 +121,56 @@ request; a broken edit is logged and the last good list stays in use.
 | `DATA_DIR`                          | `./data`       | `users.json`, `regions.json`, `ignore.json`, `thumbs/` (front-page cache)                                             |
 | `SESSION_SECRET`                    | —              | Cookie signing key, **required in production** (32+ characters). Development falls back to a fixed key with a warning |
 | `COOKIE_SECURE`                     | `false`        | `true` when served over https                                                                                         |
+| `DATABASE_URL`                      | —              | **Required.** `mysql://user:pass@host:port/db`; dev `mysql://newspaper:newspaper@127.0.0.1:3307/newspaper`            |
+| `GOOGLE_CLIENT_ID`                  | —              | Google OAuth client id. Google sign-in is off unless id, secret and `PUBLIC_ORIGIN` are set                           |
+| `GOOGLE_CLIENT_SECRET`              | —              | Google OAuth client secret                                                                                            |
+| `PUBLIC_ORIGIN`                     | —              | The origin people use, e.g. `https://news.example.com`; the redirect URI is `<origin>/auth/google/callback`           |
+| `ADMIN_EMAILS`                      | —              | Comma-separated emails that become approved admins when their account is created                                      |
+| `GOOGLE_ISSUER`                     | Google         | Testing only: another OpenID issuer (the tests use a fake one)                                                        |
+| `TEST_DATABASE_ADMIN_URL`           | root on :3307  | Tests: the account that creates throwaway `newspaper_test_*` databases                                                |
 | `PORT`, `HOST`, `ADDRESS_HEADER`, … |                | [adapter-node options](https://svelte.dev/docs/kit/adapter-node)                                                      |
 
 Variables are declared in `src/env.ts`; see `.env.example`.
 
-## Users
+## Google sign-in
 
-Users live in `DATA_DIR/users.json` (scrypt hashes). There is no sign-up page.
+Everyone signs in with Google. A new account is **pending**: it sees a "pendiente de aprobación"
+page (with the privacy notice) until an admin approves it at **Administración → Usuarios**
+(`/admin/usuarios`), where admins also block and unblock accounts and make or remove other
+admins. Blocking or a role change signs the account out at once. Admins cannot block or demote
+themselves, and the last admin cannot be removed.
+
+`ADMIN_EMAILS` bootstraps the first admins: an address in it (any case) becomes an approved admin
+when its account is created on the first Google sign-in. It is not re-applied later, so a demotion
+in the dashboard sticks. The local users.json accounts below are always admins.
+
+### Setting up the Google OAuth client
+
+1. In the [Google Cloud console](https://console.cloud.google.com/), create (or pick) a project.
+2. **APIs & Services → OAuth consent screen** (Google Auth Platform → Branding/Audience): user type
+   **External**, the app name and a support email. Scopes: `openid`, `email` and `profile` (no
+   sensitive scopes, so no verification is needed). While the app is in **Testing**, only the
+   test users you list can sign in; **Publish** it to let any Google account request access
+   (approval in the app still applies).
+3. **APIs & Services → Credentials → Create credentials → OAuth client ID**, type **Web
+   application**. Add the authorised redirect URIs, exactly:
+   - `http://localhost:5173/auth/google/callback` for `npm run dev`;
+   - `https://news.example.com/auth/google/callback` for production (your domain).
+     No JavaScript origins are needed (the flow is server side).
+4. Put the client id and secret in `.env` as `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`, set
+   `PUBLIC_ORIGIN` to the matching origin (`http://localhost:5173`, or the https production one)
+   and `ADMIN_EMAILS` to your own address, then restart.
+
+Production needs **https on a public domain**: Google accepts `http` redirect URIs only for
+`localhost`, and rejects private IPs and `.local` names. On a LAN, put the app behind a reverse
+proxy with a real certificate for a public name (it may resolve to the LAN address), and set
+`COOKIE_SECURE=true`. The flow is OpenID Connect with PKCE (S256), `state` and `nonce`; the ID
+token's signature, issuer, audience, expiry and nonce are checked and a verified email is required.
+
+## Local admins (users.json)
+
+The fallback login, under "Acceso de administración" on `/login`, for when Google is not
+configured or not reachable. Accounts live in `DATA_DIR/users.json` (scrypt hashes) and are admins.
 
 ```sh
 npm run user:add -- ana                     # create, or change ana's password (prompted)
@@ -140,13 +194,18 @@ proxy's address, or a client-spoofed one.
 ## Deploy with a container
 
 ```sh
-cp .env.example .env            # set SESSION_SECRET, NEWSPAPER_HOST_DIR
+cp .env.example .env            # SESSION_SECRET, NEWSPAPER_HOST_DIR, MYSQL_*PASSWORD, GOOGLE_*, PUBLIC_ORIGIN, ADMIN_EMAILS
 podman build --format docker -t newspaper .    # or: docker build -t newspaper .
-podman compose up -d                            # or: docker compose up -d
-podman compose exec newspaper npm run user:add -- ana
+podman compose up -d                            # db first (healthy), then the app
+podman compose exec newspaper npm run user:add -- ana   # optional local admin
 ```
 
-`compose.yaml` mounts the host folder `NEWSPAPER_HOST_DIR` read-only at `/newspapers` and a named
+`compose.yaml` runs two services. `db` is MySQL 8.4 with the named volume `newspaper-db`,
+published on `127.0.0.1:3307` only (for development and a local client; delete the line on a
+server that does not need it). Set `MYSQL_PASSWORD` and `MYSQL_ROOT_PASSWORD` before the first
+start: they are fixed when the volume is created. `newspaper` starts once the database is healthy,
+reaches it as `db:3306` (compose sets its `DATABASE_URL`) and applies pending migrations on start.
+It mounts the host folder `NEWSPAPER_HOST_DIR` read-only at `/newspapers` and a named
 volume at `/data`, and publishes port 3000 (`NEWSPAPER_PORT`) plus the metrics port 9464 on
 `127.0.0.1` only (see [Observability](#observability)). The image is `node:24-slim` with
 `poppler-utils`, runs as `node` and has a health check on `/login`.
@@ -233,9 +292,14 @@ has a cost; turn it on when you need it.
 ```sh
 npm run check            # types
 npm run lint             # prettier + eslint (npm run format to fix)
-npm run test:unit -- --run
-npm run build && node build
+npm run test:unit -- --run   # DB tests need `npm run db:up` (they skip when MySQL is down)
+npm run build && node build  # both need DATABASE_URL (from .env)
+npm run db:generate          # after editing src/lib/server/db/schema.ts: writes drizzle/NNNN_*.sql
+npm run db:reset -- --yes    # dev only: drop every table of the loopback DATABASE_URL database
 ```
+
+Tests never need Google: `src/lib/server/auth/fake-oidc.ts` is a local OpenID provider that signs
+RS256 tokens with its own JWKS, and `GOOGLE_ISSUER` can point a running server at it.
 
 The design rules and tokens are in [DESIGN.md](DESIGN.md); project conventions in
 [CLAUDE.md](CLAUDE.md).

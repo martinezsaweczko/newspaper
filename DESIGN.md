@@ -14,11 +14,13 @@ interface around them stays ink on newsprint.
 
 ## The one question per screen
 
-| Screen          | Question                                  | Answered by                                         |
-| --------------- | ----------------------------------------- | --------------------------------------------------- |
-| `/`             | What is on the stand today?               | Front pages grouped by region, Nacional first       |
-| `/paper/[slug]` | What back issues of this paper are there? | Its front pages, newest first, with a download link |
-| `/login`        | Who are you?                              | A sign-in form under the nameplate                  |
+| Screen            | Question                                  | Answered by                                         |
+| ----------------- | ----------------------------------------- | --------------------------------------------------- |
+| `/`               | What is on the stand today?               | Front pages grouped by region, Nacional first       |
+| `/paper/[slug]`   | What back issues of this paper are there? | Its front pages, newest first, with a download link |
+| `/login`          | Who are you?                              | A sign-in form under the nameplate                  |
+| `/pendiente`      | Can I read yet?                           | The pending notice, sign-out and the privacy notice |
+| `/admin/usuarios` | Who is waiting to be let in?              | Accounts by status (Pendientes first) with actions  |
 
 ## Colour
 
@@ -69,7 +71,10 @@ Two faces, both self-hosted from npm (`@fontsource-variable/*`), no external req
 ## Components
 
 - `Nameplate.svelte` — the wordmark and its double rule (`stand` size on app pages, `cover` on login).
-- `SiteHeader.svelte` — skip link, "Private newsstand", the signed-in user and Sign out.
+- `SiteHeader.svelte` — skip link, "Private newsstand", the signed-in user, Administración (admins)
+  and Sign out.
+- `AccountNotice.svelte` — the page of an account that cannot read (pending, blocked).
+- `PrivacyNotice.svelte` — the reading-log notice in small print (`/login`, `/pendiente`).
 - `FrontPage.svelte` — the front page linking to the PDF, alt text
   `"Portada de <Masthead>, dd/mm/yyyy"`, masthead caption linking to the back issues. On a render
   failure it becomes a sheet with the masthead set in Newsreader and "Front page unavailable".
