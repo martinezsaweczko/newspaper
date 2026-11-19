@@ -2,6 +2,7 @@
  * The admin side of Google accounts: list them by status, approve, block, unblock, promote,
  * demote. Pure over a Drizzle handle; the route only parses forms and invalidates the user cache.
  * Blocking and role changes bump `session_version`, which ends the account's sessions at once.
+ * Deleting removes the row; its reading history goes with it (ON DELETE CASCADE).
  */
 import { and, asc, eq, ne, sql } from 'drizzle-orm';
 import type { CurrentUser } from '../../types.ts';
@@ -93,6 +94,25 @@ export async function applyAdminAction(
 				return OK;
 			}
 		}
+	});
+}
+
+/**
+ * Deletes a Google account and, through `reading_events.user_id ON DELETE CASCADE`, its whole
+ * reading history (`approved_by` pointing at it is set null). Its sessions end on the next
+ * request: the hook no longer finds the user (the route invalidates the cache entry). Nobody
+ * deletes themselves, and the last approved admin stays. Rendered front pages are not personal
+ * data and are left alone.
+ */
+export async function deleteUser(db: Db, actor: CurrentUser, id: number): Promise<AdminResult> {
+	if (actor.role !== 'admin' || actor.status !== 'approved') return fail('invalid-state');
+	return db.transaction(async (tx) => {
+		const row = await lockRow(tx, id);
+		if (!row) return fail('not-found');
+		if (isSelf(actor, id)) return fail('self');
+		if (await isLastAdmin(tx, row)) return fail('last-admin');
+		await tx.delete(users).where(eq(users.id, id));
+		return OK;
 	});
 }
 

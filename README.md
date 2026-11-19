@@ -13,7 +13,7 @@ one day at a time. Click a front page to read the PDF.
   back-issues page.
 - **Fast front pages.** Page 1 is rendered once with `pdftoppm` and cached on disk.
 - **Sign in with Google, then wait for approval.** New accounts are pending until an admin
-  approves them; admins can block accounts and promote others. A users.json login remains as an
+  approves them; admins can block, delete and promote accounts. A users.json login remains as an
   admin-only fallback. Reading activity (which papers, when) is recorded and kept.
 
 SvelteKit 3 + Svelte 5 + Tailwind 4, Node adapter, MySQL 8.4 (Drizzle), shipped as a container.
@@ -145,6 +145,15 @@ page (with the privacy notice) until an admin approves it at **Administración �
 (`/admin/usuarios`), where admins also block and unblock accounts and make or remove other
 admins. Blocking or a role change signs the account out at once. Admins cannot block or demote
 themselves, and the last admin cannot be removed.
+
+**Deleting an account** (a privacy request, or a stale one): "Eliminar cuenta" on the row asks
+"¿Seguro? Se borrarán la cuenta y todo su historial de lectura." and only "Eliminar
+definitivamente" deletes it (the step lives in the URL, `?eliminar=<id>`, so it works without
+JavaScript; the form carries `confirm=si`). The users row goes, and its reading history with it
+(`reading_events` cascades on delete); any open session ends on its next request, because the
+account no longer exists. Admins cannot delete themselves or the last approved admin. Cached front
+pages are not personal data and stay. The same Google account can register again later and starts
+as pending.
 
 `ADMIN_EMAILS` bootstraps the first admins: an address in it (any case) becomes an approved admin
 when its account is created on the first Google sign-in. It is not re-applied later, so a demotion

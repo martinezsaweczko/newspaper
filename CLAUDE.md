@@ -84,8 +84,11 @@ See README.md for the product overview, configuration and deploy.
   invalidate. The guard is `decideAccess` (`auth/current.ts`): signed out → `/login`, pending →
   `/pendiente`, blocked → `/bloqueado`, only approved read, only admins reach `/admin/**` (403).
   Local users.json accounts are approved admins. Admin logic in `src/lib/server/admin/users.ts`
-  (approve/block/unblock/promote/demote; no self-block/demote, never the last admin; block and role
-  changes bump `session_version`); `/admin/usuarios` only parses forms.
+  (approve/block/unblock/promote/demote, and `deleteUser`; no self-block/demote/delete, never the
+  last admin; block and role changes bump `session_version`; delete removes the row in a
+  transaction, `reading_events` go by ON DELETE CASCADE, the cache entry is invalidated and the
+  hook treats the missing user as signed out); `/admin/usuarios` only parses forms (delete needs
+  the `?eliminar=<id>` confirm step and `confirm=si`).
 - Auth: `DATA_DIR/users.json` with scrypt hashes (node:crypto, no auth deps), HMAC-signed session
   cookie (`SESSION_SECRET`, httpOnly, sameSite=lax, `COOKIE_SECURE` off by default for plain-http LAN).
   Tokens carry the user's `sessionVersion` (`v`; absent = 1 for pre-version tokens); a password

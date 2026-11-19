@@ -91,8 +91,9 @@
 	<p>
 		Los datos de tu cuenta se guardan mientras la cuenta exista. El registro de lectura se conserva
 		sin límite de tiempo, por decisión del responsable, para poder consultar el historial completo
-		del quiosco. Puedes pedir en cualquier momento que se borre tu cuenta o tu registro de lectura;
-		si se borra tu cuenta, su registro de lectura se borra con ella.
+		del quiosco. Puedes pedir en cualquier momento que se borre tu cuenta o tu registro de lectura.
+		Para borrar tu cuenta, el administrador la elimina del quiosco y, con ella, todo tu historial de
+		lectura.
 	</p>
 
 	<h2>Con quién los compartimos</h2>

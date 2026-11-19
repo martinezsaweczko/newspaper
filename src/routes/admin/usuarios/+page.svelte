@@ -41,6 +41,15 @@
 			{ action: 'block', label: 'Bloquear' }
 		];
 	}
+
+	/** Deleting is a two-step flow in the URL (`?eliminar=<id>`), so it needs no JS. */
+	const canDelete = (row: Row) => row.id !== data.me;
+
+	// Move focus to the question when it opens, so it is read out and Tab reaches its buttons.
+	let confirmBox = $state<HTMLElement | null>(null);
+	$effect(() => {
+		if (data.confirmDelete !== null) confirmBox?.focus();
+	});
 </script>
 
 <svelte:head>
@@ -128,28 +137,76 @@
 							<dt>Último acceso</dt>
 							<dd class="text-ink">{row.lastLogin ? formatDate(row.lastLogin) : 'Nunca'}</dd>
 						</dl>
-						<div class="flex flex-wrap gap-2 sm:justify-end">
-							{#each actionsFor(row) as item (item.action)}
-								<form method="POST" use:enhance>
-									<input type="hidden" name="id" value={row.id} />
-									<input type="hidden" name="vista" value={data.view} />
-									<button
-										type="submit"
-										name="action"
-										value={item.action}
-										aria-label={`${item.label}: ${row.name}`}
-										class={[
-											'h-11 cursor-pointer rounded-[6px] px-4 text-[14px] font-medium',
-											item.primary
-												? 'bg-ink text-on-ink hover:opacity-90'
-												: 'border border-control text-ink hover:bg-shelf'
-										]}
+						{#if data.confirmDelete === row.id}
+							<div
+								bind:this={confirmBox}
+								tabindex="-1"
+								role="group"
+								aria-labelledby="confirm-delete-{row.id}"
+								class="rounded-[6px] border border-error bg-sheet p-4 outline-none focus-visible:ring-2 focus-visible:ring-signal sm:col-span-3"
+							>
+								<p id="confirm-delete-{row.id}" class="max-w-[60ch] text-[15px] text-ink">
+									<strong class="font-semibold">¿Seguro?</strong> Se borrarán la cuenta de
+									{row.name} y todo su historial de lectura. No se puede deshacer.
+								</p>
+								<div class="mt-3 flex flex-wrap gap-2">
+									<form method="POST" use:enhance>
+										<input type="hidden" name="id" value={row.id} />
+										<input type="hidden" name="vista" value={data.view} />
+										<input type="hidden" name="confirm" value="si" />
+										<button
+											type="submit"
+											name="action"
+											value="delete"
+											aria-label={`Eliminar definitivamente la cuenta de ${row.name}`}
+											class="h-11 cursor-pointer rounded-[6px] bg-error px-4 text-[14px] font-medium text-on-ink hover:opacity-90"
+										>
+											Eliminar definitivamente
+										</button>
+									</form>
+									<a
+										href={resolve(`/admin/usuarios?vista=${data.view}`)}
+										data-sveltekit-noscroll
+										class="flex h-11 items-center rounded-[6px] border border-control px-4 text-[14px] font-medium text-ink hover:bg-shelf"
 									>
-										{item.label}
-									</button>
-								</form>
-							{/each}
-						</div>
+										Cancelar
+									</a>
+								</div>
+							</div>
+						{:else}
+							<div class="flex flex-wrap gap-2 sm:justify-end">
+								{#each actionsFor(row) as item (item.action)}
+									<form method="POST" use:enhance>
+										<input type="hidden" name="id" value={row.id} />
+										<input type="hidden" name="vista" value={data.view} />
+										<button
+											type="submit"
+											name="action"
+											value={item.action}
+											aria-label={`${item.label}: ${row.name}`}
+											class={[
+												'h-11 cursor-pointer rounded-[6px] px-4 text-[14px] font-medium',
+												item.primary
+													? 'bg-ink text-on-ink hover:opacity-90'
+													: 'border border-control text-ink hover:bg-shelf'
+											]}
+										>
+											{item.label}
+										</button>
+									</form>
+								{/each}
+								{#if canDelete(row)}
+									<a
+										href={resolve(`/admin/usuarios?vista=${data.view}&eliminar=${row.id}`)}
+										data-sveltekit-noscroll
+										aria-label={`Eliminar cuenta: ${row.name}`}
+										class="flex h-11 items-center rounded-[6px] border border-control px-4 text-[14px] font-medium text-error hover:bg-shelf"
+									>
+										Eliminar cuenta
+									</a>
+								{/if}
+							</div>
+						{/if}
 					</li>
 				{/each}
 			</ul>
