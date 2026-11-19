@@ -7,14 +7,23 @@ import { DEFAULT_METRICS_ALLOW, parseAllowList, type Cidr } from './cidr.ts';
 export interface TelemetryConfig {
 	/** Export traces: only when an OTLP endpoint or an explicit trace exporter is configured. */
 	traces: boolean;
-	/** `OTEL_TRACES_EXPORTER` was given, so the SDK picks the exporter itself (otlp, console...). */
+	/** `OTEL_TRACES_EXPORTER` was given (otherwise OTLP to OTEL_EXPORTER_OTLP_ENDPOINT). */
 	tracesExporterFromEnv: boolean;
+	/** Where spans go: OTLP over http/protobuf and/or stdout. Empty when traces are off. */
+	traceExporters: TraceExporterName[];
+	/** Names in OTEL_TRACES_EXPORTER this app does not support (e.g. `zipkin`): warned, ignored. */
+	unsupportedTraceExporters: string[];
 	serviceName: string;
 	/** The LAN-only Prometheus endpoint, or null when disabled (`METRICS_PORT=0` or empty). */
 	metrics: { port: number; host: string; allow: Cidr[] } | null;
 }
 
 export const DEFAULT_METRICS_PORT = 9464;
+
+export const TRACE_EXPORTERS = ['otlp', 'console'] as const;
+export type TraceExporterName = (typeof TRACE_EXPORTERS)[number];
+const isTraceExporter = (name: string): name is TraceExporterName =>
+	(TRACE_EXPORTERS as readonly string[]).includes(name);
 
 type Env = Record<string, string | undefined>;
 
@@ -28,6 +37,24 @@ export function telemetryConfig(env: Env): TelemetryConfig {
 		(tracesExporterFromEnv ||
 			set(env.OTEL_EXPORTER_OTLP_ENDPOINT) ||
 			set(env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT));
+
+	// `console`, `otlp`, `otlp,console`; empty means OTLP
+	const names = traces
+		? [
+				...new Set(
+					(exporter ?? '')
+						.split(',')
+						.map((n) => n.trim())
+						.filter(Boolean)
+				)
+			]
+		: [];
+	const traceExporters: TraceExporterName[] = traces
+		? names.length > 0
+			? names.filter(isTraceExporter)
+			: ['otlp']
+		: [];
+	const unsupportedTraceExporters = names.filter((n) => !isTraceExporter(n) && n !== 'none');
 
 	const rawPort = env.METRICS_PORT;
 	let metrics: TelemetryConfig['metrics'] = null;
@@ -48,6 +75,8 @@ export function telemetryConfig(env: Env): TelemetryConfig {
 	return {
 		traces,
 		tracesExporterFromEnv,
+		traceExporters,
+		unsupportedTraceExporters,
 		serviceName: set(env.OTEL_SERVICE_NAME) ? env.OTEL_SERVICE_NAME!.trim() : 'newspaper',
 		metrics
 	};

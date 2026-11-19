@@ -277,13 +277,16 @@ before the app; `vite build` never runs it):
   log insert (`deduped` = true when the opening was already recorded in the last 30 minutes) and
   `newspaper.library.scan` (`newspaper.editions`). The NodeSDK only starts when an exporter is
   configured, so nothing is exported (and nothing is paid) by default. The fs, dns and net
-  auto-instrumentations are off.
+  auto-instrumentations are off. **No client IP address is exported**: every exporter sits behind
+  a scrubber (`src/lib/server/observability/span-privacy.ts`) that drops `client.address`,
+  `network.peer.address`, `net.peer.ip`, `http.client_ip` (X-Forwarded-For) and the like, and any
+  captured request header, from every span; no request header is captured anyway.
 - **Metrics** (Prometheus text format) on a **separate port** with a source-address allowlist.
 
 | Variable                            | Default             | Meaning                                                                                 |
 | ----------------------------------- | ------------------- | --------------------------------------------------------------------------------------- |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`       | —                   | OTLP/HTTP (protobuf) collector, e.g. `http://127.0.0.1:4318`. Setting it enables traces |
-| `OTEL_TRACES_EXPORTER`              | —                   | `console`, `otlp` or `zipkin` instead; `none` disables traces                           |
+| `OTEL_TRACES_EXPORTER`              | —                   | `otlp`, `console` or both (`otlp,console`); `none` disables traces                      |
 | `OTEL_SERVICE_NAME`                 | `newspaper`         | Service name on traces and `target_info`                                                |
 | other `OTEL_*`                      |                     | Standard SDK variables (headers, sampler, …)                                            |
 | `METRICS_PORT`                      | `9464`              | Port of the `/metrics` server; `0` or empty disables it                                 |

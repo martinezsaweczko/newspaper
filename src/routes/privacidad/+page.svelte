@@ -59,9 +59,9 @@
 		<li>
 			<strong>Datos técnicos:</strong> los registros de funcionamiento del servidor y sus métricas no
 			contienen datos personales; las métricas no distinguen entre usuarios. Las trazas de diagnóstico,
-			cuando están activadas, identifican la cuenta con un número interno, nunca con tu correo. Para frenar
-			intentos repetidos en el acceso de administración, el servidor cuenta en memoria los intentos fallidos
-			por dirección IP durante unos minutos, sin guardarlos.
+			cuando están activadas, identifican la cuenta con un número interno y no contienen tu correo ni
+			tu dirección IP. Para frenar intentos repetidos en el acceso de administración, el servidor cuenta
+			en memoria los intentos fallidos por dirección IP durante unos minutos, sin guardarlos.
 		</li>
 	</ul>
 

@@ -22,6 +22,18 @@ describe('telemetryConfig', () => {
 		expect(config.tracesExporterFromEnv).toBe(fromEnv);
 	});
 
+	it.each([
+		[{ OTEL_EXPORTER_OTLP_ENDPOINT: 'http://jaeger:4318' }, ['otlp'], []],
+		[{ OTEL_TRACES_EXPORTER: 'console' }, ['console'], []],
+		[{ OTEL_TRACES_EXPORTER: 'otlp, console,otlp' }, ['otlp', 'console'], []],
+		[{ OTEL_TRACES_EXPORTER: 'zipkin,console' }, ['console'], ['zipkin']],
+		[{}, [], []]
+	])('trace exporters for %j -> %j', (env, exporters, unsupported) => {
+		const config = telemetryConfig(env);
+		expect(config.traceExporters).toEqual(exporters);
+		expect(config.unsupportedTraceExporters).toEqual(unsupported);
+	});
+
 	it('takes the service name from OTEL_SERVICE_NAME', () => {
 		expect(telemetryConfig({ OTEL_SERVICE_NAME: 'kiosk' }).serviceName).toBe('kiosk');
 	});

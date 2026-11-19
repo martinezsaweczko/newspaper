@@ -115,7 +115,10 @@ See README.md for the product overview, configuration and deploy.
   calls `startTelemetry(process.env)` in `src/lib/server/observability/` (state on globalThis so the
   dev server's re-imports start nothing twice). Traces: `tracing.server` in `vite.config.ts`; the
   NodeSDK starts only when `OTEL_EXPORTER_OTLP_ENDPOINT`/`OTEL_TRACES_EXPORTER` is set (fs/dns/net
-  instrumentation off); custom spans via `withSpan` in `trace.ts`. The app's own bundle is excluded
+  instrumentation off); custom spans via `withSpan` in `trace.ts`. Every exporter (`otlp`,
+  `console`) is wrapped by `privateExporter` (`span-privacy.ts`), which strips client IPs
+  (`client.address`, `network.peer.address`, `net.peer.ip`, `http.client_ip`,
+  `http.request.header.*`) from all spans. The app's own bundle is excluded
   from import-in-the-middle (wrapping it broke Kit's runtime: every request a 500). Metrics: our
   own MeterProvider + `PrometheusExporter({ preventServerStart: true })`, served by our own
   `node:http` server on `METRICS_PORT` (9464, `0` disables, busy port = warning) that checks the
