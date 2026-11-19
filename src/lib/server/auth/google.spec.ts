@@ -3,7 +3,13 @@ import { createTestDb, type TestDb } from '../db/test-db.ts';
 import { users } from '../db/schema.ts';
 import { findUserById, parseAdminEmails, signInGoogleUser } from './accounts.ts';
 import { startFakeOidc, type FakeOidc } from './fake-oidc.ts';
-import { beginSignIn, finishSignIn, FLOW_TTL_SECONDS, identityFromClaims } from './google.ts';
+import {
+	beginSignIn,
+	finishSignIn,
+	FLOW_TTL_SECONDS,
+	identityFromClaims,
+	parseIntent
+} from './google.ts';
 import {
 	acceptedIssuers,
 	createOidcClient,
@@ -82,6 +88,38 @@ describe('Google OIDC flow against a fake provider', () => {
 			picture: null
 		});
 		expect(next).toBe('/paper/el-diario?date=2026-11-17');
+	});
+
+	it('whitelists the intent: only "register" is recognised', () => {
+		expect(parseIntent('register')).toBe('register');
+		for (const raw of [null, undefined, '', 'signin', 'REGISTER', 'register ', 'consent']) {
+			expect(parseIntent(raw)).toBe('signin');
+		}
+	});
+
+	it('register asks for the account chooser; sign-in keeps the default prompt', async () => {
+		const register = await beginSignIn(client, SECRET, '/', Date.now(), parseIntent('register'));
+		expect(new URL(register.url).searchParams.getAll('prompt')).toEqual(['select_account']);
+		const signin = await beginSignIn(client, SECRET, '/', Date.now(), parseIntent('signin'));
+		expect(new URL(signin.url).searchParams.has('prompt')).toBe(false);
+		const byDefault = await beginSignIn(client, SECRET, '/');
+		expect(new URL(byDefault.url).searchParams.has('prompt')).toBe(false);
+		const unknown = await beginSignIn(client, SECRET, '/', Date.now(), parseIntent('consent'));
+		expect(new URL(unknown.url).searchParams.has('prompt')).toBe(false);
+	});
+
+	it('keeps and sanitises next whatever the intent', async () => {
+		for (const intent of ['register', 'signin'] as const) {
+			for (const [next, expected] of [
+				['/paper/el-diario', '/paper/el-diario'],
+				['//evil.example/x', '/']
+			]) {
+				const { url, cookie } = await beginSignIn(client, SECRET, next, Date.now(), intent);
+				const back = await fetch(url, { redirect: 'manual' });
+				const params = new URL(back.headers.get('location')!).searchParams;
+				expect((await finishSignIn(client, SECRET, params, cookie)).next).toBe(expected);
+			}
+		}
 	});
 
 	it('never carries an off-site next through the round trip', async () => {

@@ -22,12 +22,25 @@ interface FlowState {
 	exp: number;
 }
 
+/**
+ * Why the button was pressed. `register` asks the provider to show its account chooser
+ * (`prompt=select_account`) so a newcomer picks the right Google account; `signin` keeps the
+ * provider's default prompt. Both run the same flow: a new account is created pending approval.
+ */
+export type SignInIntent = 'signin' | 'register';
+
+/** Whitelist the `?intent=` query value: only `register` is recognised, anything else signs in. */
+export function parseIntent(raw: string | null | undefined): SignInIntent {
+	return raw === 'register' ? 'register' : 'signin';
+}
+
 /** Start a sign-in: the provider URL to redirect to and the flow cookie to set. */
 export async function beginSignIn(
 	client: OidcClient,
 	secret: string,
 	next: string | null | undefined,
-	now = Date.now()
+	now = Date.now(),
+	intent: SignInIntent = 'signin'
 ): Promise<{ url: string; cookie: string }> {
 	const flow: FlowState = {
 		s: randomToken(),
@@ -37,6 +50,10 @@ export async function beginSignIn(
 		exp: Math.floor(now / 1000) + FLOW_TTL_SECONDS
 	};
 	const url = await client.authorizationUrl({ state: flow.s, nonce: flow.n, verifier: flow.cv });
+	// The OIDC client always asks for the account chooser; only registration keeps it, so a
+	// returning reader signs in with Google's default prompt (often a single click).
+	url.searchParams.delete('prompt');
+	if (intent === 'register') url.searchParams.set('prompt', 'select_account');
 	return { url: url.toString(), cookie: signToken(flow, secret, PURPOSE) };
 }
 
