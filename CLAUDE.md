@@ -39,24 +39,30 @@ See README.md for the product overview, configuration and deploy.
 
 ## Domain
 
-- **Shared folder** (`NEWSPAPER_DIR`, dev default `./newspapers`): one flat folder, all PDFs together.
-  Read-only for the app. Hidden files are ignored.
+- **Shared folder** (`NEWSPAPER_DIR`, dev default `./newspapers`): PDFs at the top level and in
+  subfolders up to `MAX_FOLDER_DEPTH` (4, `ids.ts`) deep. Subfolders (`nacional/`, `magazine/`…)
+  are **storage only, never regions** and never part of the masthead. Read-only for the app.
+  Hidden files and folders are skipped, symlinked folders never followed. `createScanner`
+  (`scan.ts`) rescans when a folder mtime of the last scan changes or after 5 s, reusing the
+  parsed editions whose path, size and mtime did not change.
 - **Edition** = one PDF. Parsed from the filename: masthead (the newspaper) + optional date
   (`YYYY-MM-DD`, `YYYYMMDD`, `DD-MM-YYYY` anywhere; `DD-MM-YY`, `DD-MM`, `MM-YY` only at the start
   or end, never next to another number; falls back to file mtime). Year-less `DD-MM` takes the
   mtime's year, or the previous one if that lands >62 days after the mtime. A trailing copy marker
-  (` (1)`, `_1`) is stripped; one edition per slug+date (`dedupe.ts`: larger file, then original,
-  then newest). The stand opens on the newest date up to today.
+  (` (1)`, `_1`) is stripped; one edition per slug+date, across subfolders too (`dedupe.ts`: larger
+  file, then original, then newest). The stand opens on the newest date up to today.
 - **Ignore list**: `ignore.json` in `DATA_DIR` (created empty from `src/lib/server/ignore.default.json`,
   `{ "patterns": [] }`, reloaded on mtime change) hides non-newspaper PDFs; whole-word, case- and
-  accent-insensitive match on the normalised filename. Ignored files are out of the stand, back
+  accent-insensitive match on the normalised file name only (never its folders). Ignored files are out of the stand, back
   issues and counts, and `resolveId` (`ignore` option, via `resolveEdition`) 404s them.
 - **Region is logical, not a folder**: `regions.json` (in `DATA_DIR`, seeded from
   `src/lib/server/regions.default.json`) maps each region to masthead patterns, matched case- and
   accent-insensitively against the normalised filename. Unmatched mastheads are **Nacional** (`NATIONAL` in `regions.ts`; old `?region=National` links just show all).
   Changing a region = editing the mapping, never moving files.
-- **Ids** are base64url of the relative path; `resolveId` rejects traversal, absolute paths,
-  non-PDF files, symlinks leaving the root and missing files.
+- **Ids** are base64url of the `/`-separated relative path (`nacional/abc-2026-11-17.pdf`);
+  `resolveId` rejects traversal and empty segments, absolute paths, backslashes, hidden segments,
+  paths deeper than the limit, symlinked folders, non-PDF files, ignored files, symlinks leaving
+  the root and missing files.
 
 ## Backend
 

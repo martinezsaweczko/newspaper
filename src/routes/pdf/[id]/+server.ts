@@ -21,7 +21,7 @@ export const GET: RequestHandler = ({ params, request, url, locals, tracing }) =
 	const headers: Record<string, string> = {
 		'content-type': 'application/pdf',
 		'accept-ranges': 'bytes',
-		'content-disposition': contentDisposition(disposition, edition.rel),
+		'content-disposition': contentDisposition(disposition, edition.name),
 		'cache-control': 'private, max-age=3600',
 		'last-modified': mtime.toUTCString(),
 		etag

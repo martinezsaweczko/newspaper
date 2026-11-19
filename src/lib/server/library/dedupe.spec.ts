@@ -6,6 +6,7 @@ function scanned(file: string, slug: string, date: string, extra: Partial<Scanne
 	return {
 		id: file,
 		file,
+		name: file.split('/').pop()!,
 		masthead: slug,
 		slug,
 		date,
@@ -45,5 +46,13 @@ describe('dedupeEditions', () => {
 			scanned('La Voz 17-11-2026.pdf', 'la-voz', '2026-11-17', { mtimeMs: 2 })
 		]);
 		expect(newer.map((e) => e.file)).toEqual(['La Voz 17-11-2026.pdf']);
+	});
+
+	it('counts the same edition in two subfolders once', () => {
+		const out = dedupeEditions([
+			scanned('nacional/el-pais-2026-11-17.pdf', 'el-pais', '2026-11-17', { size: 10 }),
+			scanned('magazine/El Pais 17-11-2026.pdf', 'el-pais', '2026-11-17', { size: 20 })
+		]);
+		expect(out.map((e) => e.file)).toEqual(['magazine/El Pais 17-11-2026.pdf']);
 	});
 });
