@@ -23,6 +23,11 @@ services:
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-newspaper}
       # behind a reverse proxy that sets X-Forwarded-For, uncomment:
       # ADDRESS_HEADER: X-Forwarded-For
+      # XFF_DEPTH (adapter-node, default 1) must equal the number of trusted proxies in front of
+      # the app: it picks the client address counting from the right of X-Forwarded-For. Too high
+      # and clients can spoof their address (and dodge the login throttle); too low and every
+      # login shares the proxy's address.
+      # XFF_DEPTH: 1
     volumes:
       # the shared folder of PDFs, read-only
       - ${NEWSPAPER_HOST_DIR:-./newspapers}:/newspapers:ro

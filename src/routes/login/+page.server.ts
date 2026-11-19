@@ -21,9 +21,9 @@ export const actions: Actions = {
 		const username = String(form.get('username') ?? '').slice(0, 64);
 		const password = String(form.get('password') ?? '').slice(0, 1024);
 		const next = sanitizeNext(String(form.get('next') ?? url.searchParams.get('next') ?? '/'));
-		const key = getClientAddress();
+		const address = getClientAddress();
 
-		const wait = loginThrottle.retryAfter(key);
+		const wait = loginThrottle.retryAfter(address, username);
 		if (wait > 0) {
 			recordLogin('throttled');
 			return fail(429, { username, message: throttleMessage(wait) });
@@ -35,12 +35,12 @@ export const actions: Actions = {
 
 		const user = await authenticate(config.dataDir, username, password);
 		if (!user) {
-			loginThrottle.fail(key);
+			loginThrottle.fail(address, username);
 			recordLogin('failure');
 			return fail(400, { username, message: 'El usuario y la contraseña no coinciden.' });
 		}
 
-		loginThrottle.reset(key);
+		loginThrottle.succeed(address, user);
 		recordLogin('success');
 		cookies.set(SESSION_COOKIE, signSession(user, sessionSecret()), {
 			path: '/',

@@ -89,8 +89,14 @@ npm run user:add -- ana --password '…'      # non-interactive
 npm run user:remove -- ana                  # sessions of a removed user stop working at once
 ```
 
-Sessions are signed, httpOnly cookies valid for 7 days. Failed logins are throttled per client
-(5 attempts per 15 minutes).
+Sessions are signed, httpOnly cookies valid for 7 days. Failed logins are throttled in memory over
+a 15-minute window: 5 failures per client address + username, 10 per username from any address,
+and 50 per client address across all usernames (slows password spraying without one person's typos
+locking out everyone behind the same NAT). A successful login clears that user's counters.
+
+Behind a reverse proxy, set `ADDRESS_HEADER=X-Forwarded-For` and `XFF_DEPTH` to the number of
+trusted proxies in front of the app (adapter-node, default 1); otherwise the throttle sees the
+proxy's address, or a client-spoofed one.
 
 ## Deploy with a container
 
