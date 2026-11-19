@@ -3,9 +3,19 @@
  * "portada" (the stand shows each edition as its front page); "periódico" names the masthead.
  */
 
+/**
+ * A count as Spanish typesetting writes it: `9999`, `12.345`, `1.284.000` (a point groups
+ * thousands from five digits up; no Intl, so the output never depends on the host).
+ */
+export function formatCount(n: number): string {
+	const digits = String(Math.trunc(Math.abs(n)));
+	const grouped = digits.length < 5 ? digits : digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+	return n < 0 ? `-${grouped}` : grouped;
+}
+
 /** `1 portada`, `2 portadas`: the singular for exactly one, the plural otherwise (0 included). */
 export function plural(n: number, one: string, many: string): string {
-	return `${n} ${n === 1 ? one : many}`;
+	return `${formatCount(n)} ${n === 1 ? one : many}`;
 }
 
 export const countFrontPages = (n: number) => plural(n, 'portada', 'portadas');

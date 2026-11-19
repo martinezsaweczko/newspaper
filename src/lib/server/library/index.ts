@@ -3,7 +3,8 @@ import { config } from '../config.ts';
 import { createThumbnailer } from '../thumbs.ts';
 import { createRegionStore } from './regions.ts';
 import { dedupeEditions } from './dedupe.ts';
-import { resolveId } from './ids.ts';
+import { resolveId, type ResolvedEdition } from './ids.ts';
+import { parseEditionName } from './parse.ts';
 import { createIgnoreStore } from './ignore.ts';
 import { setEditionCount } from '../observability/metrics.ts';
 import { withSpan } from '../observability/trace.ts';
@@ -47,3 +48,36 @@ export function library(): { editions: Edition[]; regionOrder: string[] } {
 export function resolveEdition(id: string) {
 	return resolveId(config.newspaperDir, id, { ignore: ignored.get() });
 }
+
+/** What the reading log, metrics and spans say about one edition file. */
+export interface EditionFacts {
+	path: string;
+	masthead: string;
+	mastheadSlug: string;
+	region: string;
+	/** ISO `YYYY-MM-DD`. */
+	date: string;
+}
+
+export function editionFacts(edition: ResolvedEdition): EditionFacts {
+	const parsed = parseEditionName(edition.rel, edition.stat.mtime);
+	return {
+		path: edition.rel,
+		masthead: parsed.masthead,
+		mastheadSlug: parsed.slug,
+		region: regions.get().regionOf(parsed.masthead),
+		date: parsed.date
+	};
+}
+
+/** Display name of each masthead slug in the shared folder. */
+export function mastheadNames(): Map<string, string> {
+	return new Map(scan().map((e) => [e.slug, e.masthead]));
+}
+
+/** The span attributes of an edition (never the file name). */
+export const editionAttributes = (facts: EditionFacts) => ({
+	'newspaper.masthead': facts.mastheadSlug,
+	'newspaper.region': facts.region,
+	'newspaper.edition_date': facts.date
+});

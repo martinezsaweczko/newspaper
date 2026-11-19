@@ -45,14 +45,19 @@ export const users = mysqlTable('users', {
 export const READING_KINDS = ['open', 'download'] as const;
 export type ReadingKind = (typeof READING_KINDS)[number];
 
-/** Who opened which edition, and when. Kept forever (see the privacy notice). */
+/**
+ * Who opened which edition, and when. Kept forever (see the privacy notice). The reader is either
+ * a Google account (`user_id`) or a local users.json admin (`local_username`): exactly one is set.
+ * Enforced by reading/log.ts, not by a CHECK: MySQL forbids CHECKs on a column with ON DELETE
+ * CASCADE.
+ */
 export const readingEvents = mysqlTable(
 	'reading_events',
 	{
 		id: bigint('id', { mode: 'number' }).autoincrement().primaryKey(),
-		userId: int('user_id')
-			.notNull()
-			.references(() => users.id, { onDelete: 'cascade' }),
+		userId: int('user_id').references(() => users.id, { onDelete: 'cascade' }),
+		/** The users.json name of a local admin (they have no users row). */
+		localUsername: varchar('local_username', { length: 64 }),
 		/** Relative path of the PDF inside NEWSPAPER_DIR. */
 		editionPath: varchar('edition_path', { length: 1024 }).notNull(),
 		mastheadSlug: varchar('masthead_slug', { length: 160 }).notNull(),
@@ -64,7 +69,8 @@ export const readingEvents = mysqlTable(
 	(t) => [
 		index('reading_events_user_created_idx').on(t.userId, t.createdAt),
 		index('reading_events_masthead_created_idx').on(t.mastheadSlug, t.createdAt),
-		index('reading_events_created_idx').on(t.createdAt)
+		index('reading_events_created_idx').on(t.createdAt),
+		index('reading_events_local_created_idx').on(t.localUsername, t.createdAt)
 	]
 );
 

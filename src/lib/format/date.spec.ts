@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
 	formatDate,
+	formatDateTime,
 	formatDateline,
 	formatLongDate,
 	formatShortDate,
 	formatWeekdayDate,
 	isoFromLocalDate,
+	isoFromLocalDateTime,
 	isValidDate,
-	parseIsoDate
+	parseIsoDate,
+	parseTypedDate
 } from './date.ts';
 
 describe('date formatting', () => {
@@ -40,5 +43,25 @@ describe('date formatting', () => {
 		expect(parseIsoDate('2026-13-01')).toBeNull();
 		expect(isValidDate(2023, 2, 29)).toBe(false);
 		expect(isoFromLocalDate(new Date(2026, 10, 5))).toBe('2026-11-05');
+	});
+});
+
+describe('date and time of the reading log', () => {
+	it('formats a local wall-clock time as dd/mm/yyyy HH:mm', () => {
+		expect(isoFromLocalDateTime(new Date(2026, 10, 7, 9, 5))).toBe('2026-11-07T09:05');
+		expect(formatDateTime('2026-11-07T09:05')).toBe('07/11/2026 09:05');
+		expect(formatDateTime('2026-02-30T09:05')).toBe('—');
+		expect(formatDateTime('nope')).toBe('—');
+	});
+
+	it('parses dates people type, European or ISO', () => {
+		expect(parseTypedDate('17/11/2026')).toBe('2026-11-17');
+		expect(parseTypedDate(' 1/2/2026 ')).toBe('2026-02-01');
+		expect(parseTypedDate('17.11.2026')).toBe('2026-11-17');
+		expect(parseTypedDate('2026-11-17')).toBe('2026-11-17');
+		expect(parseTypedDate('31/02/2026')).toBeNull();
+		expect(parseTypedDate('11/17/2026')).toBeNull();
+		expect(parseTypedDate('')).toBeNull();
+		expect(parseTypedDate(null)).toBeNull();
 	});
 });

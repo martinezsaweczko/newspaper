@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countFrontPages, plural, standSummary } from './count.ts';
+import { countFrontPages, formatCount, plural, standSummary } from './count.ts';
 
 describe('plural', () => {
 	it('uses the singular only for one', () => {
@@ -43,5 +43,15 @@ describe('standSummary', () => {
 		expect(standSummary({ ...base, shown: 1, onDate: 1, region: 'Nacional' })).toBe(
 			'1 de 1 portada · Nacional'
 		);
+	});
+});
+
+describe('formatCount', () => {
+	it('groups thousands with a point from five digits up', () => {
+		expect(formatCount(0)).toBe('0');
+		expect(formatCount(9999)).toBe('9999');
+		expect(formatCount(12345)).toBe('12.345');
+		expect(formatCount(1284000)).toBe('1.284.000');
+		expect(plural(12000, 'lectura', 'lecturas')).toBe('12.000 lecturas');
 	});
 });

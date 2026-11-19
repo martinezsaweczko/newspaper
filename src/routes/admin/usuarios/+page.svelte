@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AdminNav from '#lib/components/AdminNav.svelte';
 	import SiteHeader from '#lib/components/SiteHeader.svelte';
 	import { formatDate } from '#lib/format/date.ts';
 	import { enhance } from '$app/forms';
@@ -48,6 +49,7 @@
 
 <div class="mx-auto max-w-[1440px] px-4 sm:px-8">
 	<SiteHeader user={data.user} skipLabel="Saltar a los usuarios" />
+	<AdminNav current="usuarios" pending={data.pending} />
 
 	<main id="main" class="pb-24">
 		<div

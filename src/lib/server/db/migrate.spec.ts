@@ -31,12 +31,13 @@ describe('migrations (needs local MySQL)', () => {
 		expect((indexes as { name: string }[]).map((r) => r.name)).toEqual(
 			expect.arrayContaining([
 				'reading_events_created_idx',
+				'reading_events_local_created_idx',
 				'reading_events_masthead_created_idx',
 				'reading_events_user_created_idx'
 			])
 		);
 		const [journal] = await t.pool.query('SELECT COUNT(*) AS n FROM __drizzle_migrations');
-		expect((journal as { n: number }[])[0].n).toBe(1);
+		expect((journal as { n: number }[])[0].n).toBe(2);
 	});
 });
 

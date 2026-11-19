@@ -1,18 +1,23 @@
 import { contentDisposition, parseRange } from '#lib/server/http/range.ts';
-import { resolveEdition } from '#lib/server/library/index.ts';
+import { editionAttributes, editionFacts, resolveEdition } from '#lib/server/library/index.ts';
+import { recordReading } from '#lib/server/reading/index.ts';
+import { isFirstChunk } from '#lib/server/reading/log.ts';
 import { addPdfBytes } from '#lib/server/observability/metrics.ts';
 import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
 import type { RequestHandler } from './$types';
 
 /** Stream an edition with HTTP Range support; inline by default, `?download=1` for attachment. */
-export const GET: RequestHandler = ({ params, request, url }) => {
+export const GET: RequestHandler = ({ params, request, url, locals, tracing }) => {
 	const edition = resolveEdition(params.id);
 	if (!edition) return new Response('No encontrado', { status: 404 });
+	const facts = editionFacts(edition);
+	tracing.current.setAttributes(editionAttributes(facts));
 
 	const { size, mtime, mtimeMs } = edition.stat;
 	const etag = `"${size.toString(16)}-${Math.floor(mtimeMs).toString(16)}"`;
-	const disposition = url.searchParams.get('download') === '1' ? 'attachment' : 'inline';
+	const download = url.searchParams.get('download') === '1';
+	const disposition = download ? 'attachment' : 'inline';
 	const headers: Record<string, string> = {
 		'content-type': 'application/pdf',
 		'accept-ranges': 'bytes',
@@ -21,6 +26,12 @@ export const GET: RequestHandler = ({ params, request, url }) => {
 		'last-modified': mtime.toUTCString(),
 		etag
 	};
+
+	// One reading per opening: the first chunk (or a revalidation), never the later Range chunks
+	// a PDF viewer fetches. Dedupe and the database live in reading/log.ts.
+	if (request.method === 'GET' && locals.user && isFirstChunk(request.headers.get('range'))) {
+		recordReading(locals.user, facts, download ? 'download' : 'open');
+	}
 
 	if (request.headers.get('if-none-match') === etag) {
 		return new Response(null, { status: 304, headers });

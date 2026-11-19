@@ -93,3 +93,33 @@ export function formatWeekdayDate(iso: string): string {
 	if (!p) return '—';
 	return `${weekdayOf(p).slice(0, 3)} ${formatDate(iso)}`;
 }
+
+/** Local wall-clock time of a JS Date as `YYYY-MM-DDTHH:mm` (server side, for the UI to format). */
+export function isoFromLocalDateTime(date: Date): string {
+	return `${isoFromLocalDate(date)}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+const ISO_DATETIME = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/;
+
+/** `17/11/2026 09:05` from `2026-11-17T09:05` (a local wall-clock time). */
+export function formatDateTime(isoDateTime: string): string {
+	const m = ISO_DATETIME.exec(isoDateTime);
+	if (!m || !parseIsoDate(m[1]) || Number(m[2]) > 23 || Number(m[3]) > 59) return '—';
+	return `${formatDate(m[1])} ${m[2]}:${m[3]}`;
+}
+
+const EUROPEAN = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/;
+
+/**
+ * A date typed by a person: `17/11/2026`, `17-11-2026`, `17.11.2026`, `1/2/2026` or ISO
+ * `2026-11-17`. Returns the ISO date, or null when it is not a real calendar date.
+ */
+export function parseTypedDate(text: string | null | undefined): string | null {
+	const value = (text ?? '').trim();
+	if (!value) return null;
+	if (parseIsoDate(value)) return value;
+	const m = EUROPEAN.exec(value);
+	if (!m) return null;
+	const [day, month, year] = [Number(m[1]), Number(m[2]), Number(m[3])];
+	return isValidDate(year, month, day) ? toIsoDate(year, month, day) : null;
+}
