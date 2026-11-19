@@ -63,8 +63,8 @@
 						</dd>
 						<dd class="mt-2 text-[13px] text-ink tabular-nums sm:text-[14px]">
 							<span class="block sm:inline">{plural(window.readers, 'lector', 'lectores')}</span
-							><span class="hidden text-ink-soft sm:inline"> · </span><span class="block sm:inline"
-								>{plural(window.newspapers, 'periódico', 'periódicos')}</span
+							><span class="hidden px-1 text-ink-soft sm:inline" aria-hidden="true">·</span><span
+								class="block sm:inline">{plural(window.newspapers, 'periódico', 'periódicos')}</span
 							>
 						</dd>
 					</div>

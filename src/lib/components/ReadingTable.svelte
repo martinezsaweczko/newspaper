@@ -56,7 +56,7 @@
 						<span class="block truncate text-[13px] text-ink-soft">{row.reader.email}</span>
 					{/if}
 					<!-- phones: the newspaper and the kind under the reader -->
-					<span class="block truncate text-[13px] text-ink-soft md:hidden">
+					<span class="block text-[13px] text-ink-soft md:hidden">
 						<a
 							href={resolve(logUrl({ ...filters, periodico: row.slug }))}
 							class="text-ink underline-offset-4 hover:underline">{row.masthead}</a
