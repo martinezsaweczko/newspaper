@@ -46,7 +46,7 @@
 				<td class="py-2.5 pr-4 whitespace-nowrap text-ink-soft tabular-nums"
 					>{formatDateTime(row.at)}</td
 				>
-				<td class="max-w-0 py-2.5 pr-4 md:w-[30%]">
+				<td class="w-full max-w-0 py-2.5 pr-4 md:w-[30%]">
 					<a
 						href={resolve(logUrl({ ...filters, usuario: row.reader.key }))}
 						class="block truncate font-medium underline-offset-4 hover:underline"

@@ -43,28 +43,29 @@
 		<!-- KPI strip: one container split by hairlines, one column per window -->
 		<section aria-labelledby="kpi-title" class="mt-6">
 			<h2 id="kpi-title" class="sr-only">Actividad</h2>
-			<dl class="grid border-y border-hairline sm:grid-cols-3">
+			<dl class="grid grid-cols-3 border-y border-hairline">
 				{#each data.totals as window, i (window.label)}
 					<div
 						class={[
-							'py-4 sm:px-6',
-							i > 0 && 'border-t border-hairline sm:border-t-0 sm:border-l',
-							i === 0 && 'sm:pl-0'
+							'min-w-0 py-4 pl-3 sm:pl-6',
+							i > 0 ? 'border-l border-hairline' : 'pl-0 sm:pl-0'
 						]}
 					>
-						<dt class="text-[14px] text-ink-soft">{window.label}</dt>
+						<dt class="text-[13px] text-ink-soft sm:text-[14px]">{window.label}</dt>
 						<dd class="mt-1">
-							<span class="font-serif text-[30px] leading-none font-semibold tabular-nums"
+							<span
+								class="font-serif text-[26px] leading-none font-semibold tabular-nums sm:text-[30px]"
 								>{formatCount(window.openings)}</span
 							>
-							<span class="ml-1 text-[14px] text-ink-soft"
+							<span class="block text-[13px] text-ink-soft sm:ml-1 sm:inline sm:text-[14px]"
 								>{window.openings === 1 ? 'apertura' : 'aperturas'}</span
 							>
 						</dd>
-						<dd class="mt-2 text-[14px] text-ink-soft tabular-nums">
-							<span class="text-ink">{plural(window.readers, 'lector', 'lectores')}</span>
-							·
-							<span class="text-ink">{plural(window.newspapers, 'periódico', 'periódicos')}</span>
+						<dd class="mt-2 text-[13px] text-ink tabular-nums sm:text-[14px]">
+							<span class="block sm:inline">{plural(window.readers, 'lector', 'lectores')}</span
+							><span class="hidden text-ink-soft sm:inline"> · </span><span class="block sm:inline"
+								>{plural(window.newspapers, 'periódico', 'periódicos')}</span
+							>
 						</dd>
 					</div>
 				{/each}
@@ -130,7 +131,7 @@
 					<table class="mt-2 w-full text-[14px]">
 						<thead>
 							<tr class="text-left text-[13px] text-ink-soft">
-								<th scope="col" class="py-2 font-normal">Lector</th>
+								<th scope="col" class="w-full py-2 font-normal">Lector</th>
 								<th scope="col" class="py-2 text-right font-normal">Aperturas</th>
 								<th scope="col" class="hidden py-2 pl-4 text-right font-normal sm:table-cell"
 									>Periódicos</th
