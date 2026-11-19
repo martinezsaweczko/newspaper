@@ -6,6 +6,9 @@
 # made with the image's own CLI logs in and opens /admin, a rendered front page (proves
 # poppler-utils is in the image), opening a PDF writes a reading_events row, the HEALTHCHECK, and
 # the LAN-only /metrics port with newspaper_editions_opened_total. Prints the logs on failure.
+# The database checks run inside the app container with the image's own mysql2 package and its
+# DATABASE_URL: the mysql CLI of the database image cannot be relied on (on GitHub runners it
+# fails with "Can't find error-message file").
 set -euo pipefail
 
 IMAGE=${1:?usage: scripts/smoke-image.sh <image>}
@@ -29,7 +32,7 @@ cleanup() {
 		echo "--- smoke test failed (exit $status); app logs:"
 		"$ENGINE" logs "$NAME" 2>&1 || true
 		echo "--- database logs (tail):"
-		"$ENGINE" logs "$DB_NAME" 2>&1 | tail -20 || true
+		"$ENGINE" logs "$DB_NAME" 2>&1 | tail -50 || true
 	fi
 	"$ENGINE" rm -f "$NAME" "$DB_NAME" >/dev/null 2>&1 || true
 	"$ENGINE" volume rm -f "$VOLUME" >/dev/null 2>&1 || true
@@ -44,8 +47,25 @@ fail() {
 	exit 1
 }
 
+# Run one SQL statement from the app container (mysql2 from its production node_modules, the
+# DATABASE_URL the app uses) and print the rows, one per line, columns tab-separated. Errors go
+# to stderr and fail the call.
+SQL_JS='
+const mysql = require("mysql2/promise");
+(async () => {
+	const conn = await mysql.createConnection({ uri: process.env.DATABASE_URL, connectTimeout: 5000 });
+	try {
+		const [rows] = await conn.query(process.argv[1]);
+		for (const row of rows) console.log(Object.values(row).join("\t"));
+	} finally {
+		await conn.end();
+	}
+})().catch((err) => {
+	console.error("sql:", err && (err.stack || err.message || err));
+	process.exit(1);
+});'
 sql() {
-	"$ENGINE" exec "$DB_NAME" mysql -N -B -unewspaper -p"$DB_PASSWORD" newspaper -e "$1" 2>/dev/null
+	"$ENGINE" exec "$NAME" node -e "$SQL_JS" "$1"
 }
 
 node scripts/make-samples.mjs "$WORK/samples"
@@ -79,7 +99,11 @@ done
 echo "GET /login -> $code"
 [ "$code" = 200 ] || fail "/login did not answer 200"
 
-tables=$(sql 'SHOW TABLES' | sort | tr '\n' ' ')
+# the image must ship mysql2 (the pruned production node_modules)
+"$ENGINE" exec "$NAME" test -f node_modules/mysql2/package.json ||
+	fail "the image has no node_modules/mysql2"
+tables=$(sql 'SHOW TABLES') || fail "SHOW TABLES failed (see the error above)"
+tables=$(printf '%s\n' "$tables" | sort | tr '\n' ' ')
 echo "SHOW TABLES -> $tables"
 case "$tables" in
 *__drizzle_migrations*reading_events*users*) ;;
@@ -114,7 +138,8 @@ echo "GET /pdf/$id -> $type"
 [ "$type" = "200 application/pdf" ] || fail "the PDF was not served"
 rows=0
 for _ in $(seq 1 10); do
-	rows=$(sql "SELECT COUNT(*) FROM reading_events WHERE local_username = '$USER_NAME'")
+	rows=$(sql "SELECT COUNT(*) FROM reading_events WHERE local_username = '$USER_NAME'") ||
+		fail "counting reading_events failed (see the error above)"
 	[ "$rows" = 1 ] && break
 	sleep 0.5
 done
