@@ -20,6 +20,8 @@ interface around them stays ink on newsprint.
 | `/paper/[slug]`   | What back issues of this paper are there? | Its front pages, newest first, with a download link  |
 | `/login`          | Who are you?                              | The Google buttons, then the admin form              |
 | `/pendiente`      | Can I read yet?                           | The pending notice, sign-out and the privacy notice  |
+| `/privacidad`     | What does the stand keep about me?        | The privacy policy as one reading column             |
+| `/condiciones`    | What may I do with the papers?            | The terms as one reading column                      |
 | `/admin/usuarios` | Who is waiting to be let in?              | Accounts by status (Pendientes first) with actions   |
 | `/admin`          | Who is reading what lately?               | Openings today / 7 / 30 days, top papers and readers |
 | `/admin/lecturas` | Who opened which edition, and when?       | The filtered reading log, 50 per page, and its CSV   |
@@ -85,7 +87,13 @@ Two faces, both self-hosted from npm (`@fontsource-variable/*`), no external req
 - `SiteHeader.svelte` — skip link, "Private newsstand", the signed-in user, Administración (admins)
   and Sign out.
 - `AccountNotice.svelte` — the page of an account that cannot read (pending, blocked).
-- `PrivacyNotice.svelte` — the reading-log notice in small print (`/login`, `/pendiente`).
+- `PrivacyNotice.svelte` — the reading-log notice in small print (`/login`, `/pendiente`), linking
+  to `/privacidad`. Under it, and in a small hairline footer on signed-in pages, "Política de
+  privacidad · Condiciones del servicio" in 13px grey.
+- `LegalPage.svelte` — the frame of `/privacidad` and `/condiciones`: the site header, one centred
+  68ch column, the title in Newsreader (28-32px), "Última actualización: dd/mm/yyyy" over a 1px ink
+  rule, Geist body at 16-17px / 1.65, section heads in Newsreader 22-24px, and a way back (stand,
+  account notice or login, by session) beside the link to the other page.
 - `FrontPage.svelte` — the front page linking to the PDF, alt text
   `"Portada de <Masthead>, dd/mm/yyyy"`, masthead caption linking to the back issues. On a render
   failure it becomes a sheet with the masthead set in Newsreader and "Front page unavailable".

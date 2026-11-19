@@ -105,6 +105,11 @@ See README.md for the product overview, configuration and deploy.
   via `#lib/admin-url.ts`. Times shown in server local time (`isoFromLocalDateTime`).
 - Front pages: `/thumb/[id]` renders page 1 with `pdftoppm` (poppler-utils, `execFile`, timeout),
   cached in `DATA_DIR/thumbs/` keyed by path+mtime+size, in-flight dedupe, small concurrency cap.
+- Legal pages: `/privacidad` (privacy policy) and `/condiciones` (terms) are public (`LEGAL_PATHS`
+  in `auth/current.ts`, open to anonymous, pending and blocked visitors) for Google's consent
+  screen. Text lives in the routes, frame in `LegalPage.svelte`, operator/contact from
+  `LEGAL_OPERATOR_NAME` / `LEGAL_CONTACT_EMAIL` (`config.legal`). **Keep the text in sync with what
+  the app actually stores** (schema, cookies, logs, metrics, traces) and bump its `UPDATED` date.
 - PDFs: `/pdf/[id]` streams with HTTP Range (206) and inline disposition; `?download=1` for attachment.
 - Observability: `src/instrumentation.server.ts` (loaded before the app, never by `vite build`)
   calls `startTelemetry(process.env)` in `src/lib/server/observability/` (state on globalThis so the

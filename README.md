@@ -128,6 +128,8 @@ request; a broken edit is logged and the last good list stays in use.
 | `PUBLIC_ORIGIN`                     | —              | The origin people use, e.g. `https://news.example.com`; the redirect URI is `<origin>/auth/google/callback`           |
 | `ADMIN_EMAILS`                      | —              | Comma-separated emails that become approved admins when their account is created                                      |
 | `GOOGLE_ISSUER`                     | Google         | Testing only: another OpenID issuer (the tests use a fake one)                                                        |
+| `LEGAL_OPERATOR_NAME`               | —              | Who runs the stand, named as data controller on `/privacidad` and `/condiciones` (default: a generic wording)         |
+| `LEGAL_CONTACT_EMAIL`               | first admin    | Address for privacy requests on the legal pages; defaults to the first `ADMIN_EMAILS` address, else none shown        |
 | `TEST_DATABASE_ADMIN_URL`           | root on :3307  | Tests: the account that creates throwaway `newspaper_test_*` databases                                                |
 | `PORT`, `HOST`, `ADDRESS_HEADER`, … |                | [adapter-node options](https://svelte.dev/docs/kit/adapter-node)                                                      |
 
@@ -170,6 +172,22 @@ Production needs **https on a public domain**: Google accepts `http` redirect UR
 proxy with a real certificate for a public name (it may resolve to the LAN address), and set
 `COOKIE_SECURE=true`. The flow is OpenID Connect with PKCE (S256), `state` and `nonce`; the ID
 token's signature, issuer, audience, expiry and nonce are checked and a verified email is required.
+
+### Google consent screen (Branding)
+
+The consent screen's **Branding** page asks for public URLs. The app serves two public pages,
+reachable without signing in (and by any account, even pending or blocked):
+
+- Application home page: `https://<domain>/`
+- Application privacy policy link: `https://<domain>/privacidad` (Política de privacidad)
+- Application terms of service link: `https://<domain>/condiciones` (Condiciones del servicio)
+
+Their **authorized domain** must be a verified public domain you own (Google Search Console);
+`localhost` and LAN addresses are not accepted, so leave these fields empty while the app is in
+**Testing** and fill them in when it has its public https domain. Set `LEGAL_OPERATOR_NAME` and
+`LEGAL_CONTACT_EMAIL` so the pages name who runs the stand and where privacy requests go (without
+them they say "el administrador de este quiosco" and use the first `ADMIN_EMAILS` address). The
+texts are a plain template describing what the app stores, not legal advice.
 
 ## Reading log and dashboard
 
