@@ -65,6 +65,23 @@ const PUBLIC = new Set<string>([
 	...LEGAL_PATHS
 ]);
 export const PENDING_PATH = '/pendiente';
+
+/**
+ * `/privacidad/` → `/privacidad` (and the same for `/condiciones/`): the hook answers 308 before
+ * the guard, so a pasted URL with a trailing slash reaches the public page instead of /login,
+ * and each page keeps one canonical URL. Exactly one trailing slash on exactly these paths;
+ * anything else is left to the guard.
+ */
+export function canonicalLegalPath(pathname: string): string | null {
+	if (!pathname.endsWith('/')) return null;
+	let bare = pathname.slice(0, -1);
+	try {
+		bare = decodeURI(bare);
+	} catch {
+		return null;
+	}
+	return (LEGAL_PATHS as readonly string[]).includes(bare) ? bare : null;
+}
 export const BLOCKED_PATH = '/bloqueado';
 
 /** Routes reachable without a session. Static files are served by adapter-node before the hook. */

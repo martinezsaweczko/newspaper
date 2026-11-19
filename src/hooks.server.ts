@@ -1,5 +1,10 @@
 import { building } from '$app/env';
-import { decideAccess, resolveUser, userLabel } from '#lib/server/auth/current.ts';
+import {
+	canonicalLegalPath,
+	decideAccess,
+	resolveUser,
+	userLabel
+} from '#lib/server/auth/current.ts';
 import { db, userCache, users } from '#lib/server/auth/index.ts';
 import { isCrossSiteForm } from '#lib/server/auth/origin.ts';
 import { SESSION_COOKIE } from '#lib/server/auth/session.ts';
@@ -60,6 +65,12 @@ const guarded: Handle = async ({ event, resolve }) => {
 		return new Response('No se permiten envíos de formularios desde otros sitios.', {
 			status: 403
 		});
+	}
+
+	// `/privacidad/` → `/privacidad`: the legal pages are public under one URL only
+	const legal = canonicalLegalPath(event.url.pathname);
+	if (legal) {
+		return new Response(null, { status: 308, headers: { location: legal + event.url.search } });
 	}
 
 	// Rejects removed users and tokens older than the account's session version (password change,

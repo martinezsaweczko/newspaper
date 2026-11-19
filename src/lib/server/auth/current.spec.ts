@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CurrentUser } from '../../types.ts';
 import type { UserRow } from '../db/schema.ts';
-import { decideAccess, isPublic, localAdmin, resolveUser, userLabel } from './current.ts';
+import {
+	canonicalLegalPath,
+	decideAccess,
+	isPublic,
+	localAdmin,
+	resolveUser,
+	userLabel
+} from './current.ts';
 import {
 	signGoogleSession,
 	signSession,
@@ -173,5 +180,37 @@ describe('decideAccess', () => {
 		expect(go(reader, '/administrar')).toEqual({ kind: 'pass' }); // not the /admin tree
 		expect(go(user({ role: 'admin' }), '/admin/usuarios', 'POST')).toEqual({ kind: 'pass' });
 		expect(go(localAdmin('root'), '/admin/usuarios')).toEqual({ kind: 'pass' });
+	});
+});
+
+describe('canonicalLegalPath', () => {
+	it.each([
+		['/privacidad/', '/privacidad'],
+		['/condiciones/', '/condiciones'],
+		['/%70rivacidad/', '/privacidad']
+	])('redirects %s to %s', (path, to) => {
+		expect(canonicalLegalPath(path)).toBe(to);
+	});
+
+	it.each([
+		'/privacidad',
+		'/condiciones',
+		'/privacidad//',
+		'/privacidadX/',
+		'/privacidad/x/',
+		'/privacidad/../admin/',
+		'/admin/',
+		'/login/',
+		'/',
+		'/%E0%A4%A/'
+	])('leaves %s alone', (path) => {
+		expect(canonicalLegalPath(path)).toBeNull();
+	});
+
+	it('does not widen the public routes', () => {
+		for (const path of ['/privacidad/', '/privacidadX', '/privacidad/../admin', '/condiciones/x']) {
+			expect(isPublic(path), path).toBe(false);
+			expect(decideAccess(null, 'GET', path)).toMatchObject({ kind: 'redirect' });
+		}
 	});
 });

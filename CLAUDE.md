@@ -106,7 +106,8 @@ See README.md for the product overview, configuration and deploy.
 - Front pages: `/thumb/[id]` renders page 1 with `pdftoppm` (poppler-utils, `execFile`, timeout),
   cached in `DATA_DIR/thumbs/` keyed by path+mtime+size, in-flight dedupe, small concurrency cap.
 - Legal pages: `/privacidad` (privacy policy) and `/condiciones` (terms) are public (`LEGAL_PATHS`
-  in `auth/current.ts`, open to anonymous, pending and blocked visitors) for Google's consent
+  in `auth/current.ts`, open to anonymous, pending and blocked visitors; `/privacidad/` and
+  `/condiciones/` get a 308 to the bare path from `canonicalLegalPath` before the guard) for Google's consent
   screen. Text lives in the routes, frame in `LegalPage.svelte`, operator/contact from
   `LEGAL_OPERATOR_NAME` / `LEGAL_CONTACT_EMAIL` (`config.legal`). **Keep the text in sync with what
   the app actually stores** (schema, cookies, logs, metrics, traces) and bump its `UPDATED` date.
