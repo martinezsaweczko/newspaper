@@ -1,7 +1,8 @@
 /**
  * Throwaway databases for integration tests: `newspaper_test_<random>` on the local MySQL
  * (`npm run db:up`), migrated, removed again by `drop()`. Returns null when MySQL is unreachable
- * so the suite can skip cleanly. Never imported by app code.
+ * so the suite can skip cleanly, unless REQUIRE_TEST_DB=1 (CI), where an unreachable MySQL fails
+ * the suite instead of skipping it. Never imported by app code.
  */
 import { randomBytes } from 'node:crypto';
 import { createPool, type Pool } from 'mysql2/promise';
@@ -34,6 +35,11 @@ export async function createTestDb(): Promise<TestDb | null> {
 	try {
 		await withAdmin((admin) => admin.query(`CREATE DATABASE \`${name}\` CHARACTER SET utf8mb4`));
 	} catch (err) {
+		if (process.env.REQUIRE_TEST_DB === '1') {
+			throw new Error(`REQUIRE_TEST_DB=1 but MySQL is unreachable: ${(err as Error).message}`, {
+				cause: err
+			});
+		}
 		console.warn(`[test-db] MySQL unreachable, skipping DB tests: ${(err as Error).message}`);
 		return null;
 	}

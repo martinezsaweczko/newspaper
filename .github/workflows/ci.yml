@@ -14,6 +14,24 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    # MySQL for the integration tests: each spec creates and drops its own newspaper_test_* database.
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root
+          MYSQL_DATABASE: newspaper
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -pci-root --silent"
+          --health-interval 5s --health-timeout 5s --health-retries 30 --health-start-period 20s
+    env:
+      # Kit validates env at build time and DATABASE_URL is required; also used by the tests.
+      DATABASE_URL: mysql://root:ci-root@127.0.0.1:3307/newspaper
+      TEST_DATABASE_ADMIN_URL: mysql://root:ci-root@127.0.0.1:3307
+      # an unreachable MySQL fails the DB tests instead of skipping them
+      REQUIRE_TEST_DB: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -24,6 +42,16 @@ jobs:
       # The front-page spec renders real PDFs with pdftoppm.
       - name: Install poppler-utils
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends poppler-utils
+      # The committed migrations must match the schema: generating again changes nothing in
+      # /drizzle (porcelain status also lists new, untracked migration files).
+      - name: Migration drift check
+        run: |
+          npm run db:generate
+          if [ -n "$(git status --porcelain -- drizzle)" ]; then
+            git status --porcelain -- drizzle
+            echo "::error::src/lib/server/db/schema.ts changed without a migration: run npm run db:generate and commit /drizzle"
+            exit 1
+          fi
       - run: npm run lint
       - run: npm run check
       - name: Unit tests

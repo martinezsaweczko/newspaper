@@ -2,8 +2,9 @@ name: CI/CD
 
 # Entry workflow. Pull requests and pushes to main: tests only.
 # Semantic version tags (vX.Y.Z) on main: tests, then the container is built with podman,
-# smoke-tested (login, a rendered front page, healthcheck, /metrics) and published to GHCR tagged
-# with that version, and a GitHub Release is created.
+# smoke-tested against a MySQL container (auto-migrate, login, /admin, a rendered front page, a
+# reading_events row for an opened PDF, healthcheck, /metrics) and published to GHCR tagged with
+# that version, and a GitHub Release is created.
 on:
   push:
     branches: [main]
@@ -59,9 +60,12 @@ jobs:
             --label org.opencontainers.image.version="${VERSION}" \
             --label org.opencontainers.image.title="newspaper" \
             -t newspaper:smoke .
-      # Synthetic editions mounted read-only, a user made with the image's CLI, then: /login 200,
-      # login cookie, /thumb/<id> image/jpeg (poppler is in the image), HEALTHCHECK, and :9464/metrics
-      # with newspaper_* series. The script prints the container logs when a check fails.
+      # MySQL 8.4 and the app on a private podman network, synthetic editions mounted read-only, a
+      # local admin made with the image's CLI, then: tables created by the auto-migrate (SHOW
+      # TABLES), /login 200 without the Google button, /auth/google 404, login cookie, /admin 200,
+      # /thumb/<id> image/jpeg (poppler is in the image), /pdf/<id> writes a reading_events row,
+      # HEALTHCHECK, and :9464/metrics with newspaper_editions_opened_total. The script prints the
+      # container logs when a check fails and removes its containers, network and volume.
       - name: Smoke test the image
         run: scripts/smoke-image.sh localhost/newspaper:smoke
       - name: Log in to GHCR
