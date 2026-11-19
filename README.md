@@ -221,8 +221,12 @@ before the app; `vite build` never runs it):
 - **Traces** (OpenTelemetry, following the
   [SvelteKit observability docs](https://svelte.dev/docs/kit/observability)): SvelteKit emits spans
   for `handle`, `load`, form actions and `+server` handlers (`tracing.server` in `vite.config.ts`);
-  the root span `sveltekit.handle.root` carries `newspaper.user`. Custom spans:
-  `newspaper.thumbnail.render` (`newspaper.masthead`, `newspaper.thumbnail.cache_hit`) and
+  the root span `sveltekit.handle.root` carries `newspaper.user.id` (the account's `users.id`, or
+  `local:<name>` for a local admin; never the email) and `newspaper.user.role`. The `/pdf` and
+  `/thumb` handler spans carry `newspaper.masthead` (the slug), `newspaper.region` and
+  `newspaper.edition_date`. Custom spans: `newspaper.thumbnail.render` (the same edition
+  attributes plus `newspaper.thumbnail.cache_hit`), `newspaper.reading.record` around the reading
+  log insert (`deduped` = true when the opening was already recorded in the last 30 minutes) and
   `newspaper.library.scan` (`newspaper.editions`). The NodeSDK only starts when an exporter is
   configured, so nothing is exported (and nothing is paid) by default. The fs, dns and net
   auto-instrumentations are off.
@@ -239,7 +243,8 @@ before the app; `vite build` never runs it):
 | `METRICS_ALLOW`                     | private ranges      | Comma-separated CIDRs allowed to scrape (see below)                                     |
 | `METRICS_BIND`, `METRICS_HOST_PORT` | `127.0.0.1`, `9464` | compose only: host address and port that publish the container's 9464                   |
 
-Exposed series (labels are low-cardinality: never usernames, ids or file names):
+Exposed series (labels are low-cardinality: never users, emails, ids or file names;
+`newspaper` is the masthead slug, bounded by the mastheads in the folder):
 
 | Metric                                        | Type      | Labels                                                                                          |
 | --------------------------------------------- | --------- | ----------------------------------------------------------------------------------------------- |
@@ -249,6 +254,24 @@ Exposed series (labels are low-cardinality: never usernames, ids or file names):
 | `newspaper_logins_total`                      | counter   | `result` = `success`, `failure`, `throttled`                                                    |
 | `newspaper_editions`                          | gauge     | editions found by the last folder scan                                                          |
 | `newspaper_pdf_bytes_sent_total`              | counter   | PDF bytes streamed                                                                              |
+| `newspaper_page_views_total`                  | counter   | `route` (route id): 2xx GETs of HTML pages and their client-side navigations (`__data.json`)    |
+| `newspaper_editions_opened_total`             | counter   | `newspaper`, `region`, `kind` = `open`, `download`; the rows the reading log records (deduped)  |
+| `newspaper_front_pages_viewed_total`          | counter   | `newspaper`, `region`: front pages served with 200 (cache hits and fresh renders)               |
+| `newspaper_users`                             | gauge     | `status` = `pending`, `approved`, `blocked` (Google accounts)                                   |
+| `newspaper_readers_active`                    | gauge     | `window` = `1d`, `7d`, `30d`: distinct readers with an opening in the window                    |
+
+The two gauges come from the database through a cached query: at most one every 60 s (a failed one
+counts too, so a down database is not queried on every scrape), and a scrape waits at most 2 s for
+it before answering with the last values.
+
+Example PromQL, top newspapers over 7 days:
+
+```promql
+topk(10, sum by (newspaper)(increase(newspaper_editions_opened_total[7d])))
+```
+
+Per-user detail (who read what, when) is never a metric or a label: it lives only in the database
+and is shown in the admin dashboard (`/admin`, `/admin/lecturas`).
 
 ### LAN only
 

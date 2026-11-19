@@ -3,9 +3,13 @@ import type { CurrentUser } from '../../types.ts';
 import { db } from '../auth/index.ts';
 import type { ReadingKind } from '../db/schema.ts';
 import type { EditionFacts } from '../library/index.ts';
+import { recordEditionOpened } from '../observability/metrics.ts';
 import { createReadingLog, readerOf } from './log.ts';
 
-export const readingLog = createReadingLog(db);
+/** newspaper_editions_opened_total counts exactly the rows the log records (after dedupe). */
+export const readingLog = createReadingLog(db, {
+	onRecorded: (edition, kind) => recordEditionOpened(edition.mastheadSlug, edition.region, kind)
+});
 
 let warned = false;
 

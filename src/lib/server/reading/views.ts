@@ -60,6 +60,21 @@ const toView = (row: ReadingRow, names: Map<string, string>): ReadingView => ({
 	kind: row.kind
 });
 
+/** newspaper_users and newspaper_readers_active, in one round of queries. */
+export async function gaugeValues(db: Db, now = new Date()) {
+	const byStatus = await db
+		.select({ status: users.status, n: count() })
+		.from(users)
+		.groupBy(users.status);
+	const since = (days: number) => new Date(now.getTime() - days * DAY_MS);
+	const [d1, d7, d30] = await Promise.all(
+		[1, 7, 30].map(async (days) => (await totalsSince(db, since(days))).readers)
+	);
+	const usersBy = { pending: 0, approved: 0, blocked: 0 };
+	for (const row of byStatus) usersBy[row.status] = Number(row.n);
+	return { users: usersBy, readers: { '1d': d1, '7d': d7, '30d': d30 } };
+}
+
 export async function pendingUsers(db: Db): Promise<number> {
 	const [row] = await db.select({ n: count() }).from(users).where(eq(users.status, 'pending'));
 	return Number(row?.n ?? 0);

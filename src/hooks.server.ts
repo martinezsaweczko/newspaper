@@ -8,7 +8,14 @@ import { closeDbHandle } from '#lib/server/db/index.ts';
 import { redactUrl, runMigrations, waitForDb } from '#lib/server/db/migrate.ts';
 import { seedIgnoreFile } from '#lib/server/library/ignore.ts';
 import { seedRegionsFile } from '#lib/server/library/regions.ts';
-import { initMetrics, recordHttpRequest } from '#lib/server/observability/metrics.ts';
+import {
+	cachedLoader,
+	initMetrics,
+	recordHttpRequest,
+	recordPageView,
+	setDbGauges
+} from '#lib/server/observability/metrics.ts';
+import { gaugeValues } from '#lib/server/reading/views.ts';
 import type { Handle, ServerInit } from '@sveltejs/kit/hooks';
 import { mkdirSync } from 'node:fs';
 
@@ -19,6 +26,8 @@ export const init: ServerInit = async () => {
 	seedRegionsFile(config.dataDir);
 	seedIgnoreFile(config.dataDir);
 	initMetrics();
+	// newspaper_users / newspaper_readers_active: one cached query per minute at most
+	setDbGauges(cachedLoader(() => gaugeValues(db())));
 	// wait for MySQL (container start order), then apply pending migrations from /drizzle
 	await waitForDb(config.databaseUrl);
 	await runMigrations(db());
@@ -32,14 +41,17 @@ export const init: ServerInit = async () => {
 export const handle: Handle = async (input) => {
 	const started = performance.now();
 	let status = 500;
+	let contentType: string | null = null;
 	try {
 		const response = await guarded(input);
 		status = response.status;
+		contentType = response.headers.get('content-type');
 		return response;
 	} finally {
 		// route id (e.g. /thumb/[id]), never the raw path: keeps the label set small
-		const { route, request } = input.event;
+		const { route, request, isDataRequest } = input.event;
 		recordHttpRequest(route.id, request.method, status, (performance.now() - started) / 1000);
+		recordPageView({ route: route.id, method: request.method, status, contentType, isDataRequest });
 	}
 };
 
@@ -60,7 +72,11 @@ const guarded: Handle = async ({ event, resolve }) => {
 	});
 	if (!event.locals.user && config.authDisabled) event.locals.user = DEV_USER;
 	if (event.locals.user) {
-		event.tracing.root.setAttribute('newspaper.user', userLabel(event.locals.user));
+		// the account id or `local:<name>`, never the email
+		event.tracing.root.setAttributes({
+			'newspaper.user.id': userLabel(event.locals.user),
+			'newspaper.user.role': event.locals.user.role
+		});
 	}
 
 	const { pathname, search } = event.url;
