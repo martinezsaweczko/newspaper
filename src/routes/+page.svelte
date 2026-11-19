@@ -192,13 +192,41 @@
 					<h2 id="none-title" class="font-serif text-[24px] leading-tight font-semibold">
 						Ningún periódico coincide
 					</h2>
-					<p class="mt-2 text-base text-ink">
-						Nada {stand.q ? `llamado «${stand.q}»` : ''}
-						{stand.region ? `de ${stand.region}` : ''} el {formatLongDate(stand.date)}.
-						<a class="underline underline-offset-4" href={resolve(standUrl({ date: stand.date }))}
-							>Ver todas las portadas del día</a
-						>
-					</p>
+					{#if data.elsewhere.length > 0}
+						<p class="mt-2 text-base text-ink">
+							Nada llamado «{stand.q}»{stand.region ? ` de ${stand.region}` : ''} el {formatLongDate(
+								stand.date
+							)}, pero sí en otros días:
+						</p>
+						<ul class="mt-3 flex flex-col">
+							{#each data.elsewhere as match (match.slug)}
+								<li>
+									<a
+										class="inline-flex min-h-11 items-center text-base text-ink underline underline-offset-4"
+										href={resolve(standUrl({ date: match.date, region: stand.region, q: stand.q }))}
+										><span
+											><span class="font-serif font-semibold">{match.masthead}</span> — última
+											portada:
+											{formatLongDate(match.date)}</span
+										></a
+									>
+								</li>
+							{/each}
+						</ul>
+					{:else}
+						<p class="mt-2 text-base text-ink">
+							{#if stand.q}
+								No hay ningún periódico llamado «{stand.q}»{stand.region
+									? ` en ${stand.region}`
+									: ''}.
+							{:else}
+								Nada {stand.region ? `de ${stand.region}` : ''} el {formatLongDate(stand.date)}.
+							{/if}
+							<a class="underline underline-offset-4" href={resolve(standUrl({ date: stand.date }))}
+								>Ver todas las portadas del día</a
+							>
+						</p>
+					{/if}
 				</section>
 			{/if}
 

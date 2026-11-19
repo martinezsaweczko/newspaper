@@ -1,6 +1,6 @@
 import type { Edition } from '#lib/types.ts';
 import { describe, expect, it } from 'vitest';
-import { backIssues, buildNewsstand, sortRegions } from './newsstand.ts';
+import { backIssues, buildNewsstand, findElsewhere, sortRegions } from './newsstand.ts';
 import { slugify } from './text.ts';
 
 let n = 0;
@@ -125,5 +125,50 @@ describe('backIssues', () => {
 			'2026-11-15'
 		]);
 		expect(backIssues(editions, 'nope')).toEqual([]);
+	});
+});
+
+describe('findElsewhere', () => {
+	const more = [
+		...editions,
+		ed('La Voz de Asturias', '2026-11-10', 'Asturias'),
+		ed('La Voz de Galicia', '2026-11-15', 'Galicia', 9) // newer copy of the same day
+	];
+
+	it('finds mastheads matching the search on other dates, newest edition each', () => {
+		const found = findElsewhere(more, { q: 'VOZ', date: '2026-11-16' });
+		expect(found.map((m) => [m.masthead, m.date])).toEqual([
+			['La Voz de Galicia', '2026-11-17'],
+			['La Voz de Asturias', '2026-11-10']
+		]);
+		expect(found[0]).toMatchObject({ slug: 'la-voz-de-galicia', region: 'Galicia' });
+		expect(found[0].id).toMatch(/^id\d+$/);
+	});
+
+	it('leaves out the selected date', () => {
+		const found = findElsewhere(more, { q: 'voz', date: '2026-11-17' });
+		expect(found.map((m) => [m.masthead, m.date])).toEqual([
+			['La Voz de Galicia', '2026-11-15'],
+			['La Voz de Asturias', '2026-11-10']
+		]);
+		// the newer file of that day wins
+		expect(found[0].id).toBe(more[more.length - 1].id);
+	});
+
+	it('respects the region filter', () => {
+		expect(
+			findElsewhere(more, { q: 'voz', date: '2026-11-16', region: 'Asturias' }).map(
+				(m) => m.masthead
+			)
+		).toEqual(['La Voz de Asturias']);
+		expect(findElsewhere(more, { q: 'voz', date: '2026-11-16', region: 'Catalunya' })).toEqual([]);
+	});
+
+	it('returns nothing for an empty or unknown search and caps the list', () => {
+		expect(findElsewhere(more, { q: '  ', date: '2026-11-16' })).toEqual([]);
+		expect(findElsewhere(more, { q: 'narnia', date: '2026-11-16' })).toEqual([]);
+		const many = Array.from({ length: 8 }, (_, i) => ed(`Diario ${i}`, '2026-11-01', 'Nacional'));
+		expect(findElsewhere(many, { q: 'diario', date: '2026-11-17' })).toHaveLength(5);
+		expect(findElsewhere(many, { q: 'diario', date: '2026-11-17' }, 2)).toHaveLength(2);
 	});
 });

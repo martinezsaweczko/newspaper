@@ -110,3 +110,42 @@ export function backIssues(editions: Edition[], slug: string): Edition[] {
 	}
 	return [...perDay.values()].sort((a, b) => b.date.localeCompare(a.date));
 }
+
+/** A masthead found on another day by an empty search. */
+export interface Elsewhere {
+	masthead: string;
+	slug: string;
+	region: string;
+	/** Its newest date other than the selected one. */
+	date: string;
+	/** The edition of that date (the newest file). */
+	id: string;
+}
+
+/**
+ * When a search finds nothing on the selected day: the mastheads matching `q` (accent- and
+ * case-insensitive, within `region` when set) on other dates, each with its newest edition,
+ * newest first, at most `limit`.
+ */
+export function findElsewhere(
+	editions: Edition[],
+	query: { q: string; date: string | null; region?: string | null },
+	limit = 5
+): Elsewhere[] {
+	const needle = normalise(query.q.trim().slice(0, 80));
+	if (!needle) return [];
+	const best = new Map<string, Edition>();
+	for (const e of editions) {
+		if (e.date === query.date) continue;
+		if (query.region && e.region !== query.region) continue;
+		if (!normalise(e.masthead).includes(needle)) continue;
+		const prev = best.get(e.slug);
+		if (!prev || e.date > prev.date || (e.date === prev.date && e.mtimeMs > prev.mtimeMs)) {
+			best.set(e.slug, e);
+		}
+	}
+	return [...best.values()]
+		.sort((a, b) => b.date.localeCompare(a.date) || byMasthead(a, b))
+		.slice(0, limit)
+		.map(({ masthead, slug, region, date, id }) => ({ masthead, slug, region, date, id }));
+}
