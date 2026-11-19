@@ -18,7 +18,7 @@ interface around them stays ink on newsprint.
 | ----------------- | ----------------------------------------- | ---------------------------------------------------- |
 | `/`               | What is on the stand today?               | Front pages grouped by region, Nacional first        |
 | `/paper/[slug]`   | What back issues of this paper are there? | Its front pages, newest first, with a download link  |
-| `/login`          | Who are you?                              | A sign-in form under the nameplate                   |
+| `/login`          | Who are you?                              | The Google buttons, then the admin form              |
 | `/pendiente`      | Can I read yet?                           | The pending notice, sign-out and the privacy notice  |
 | `/admin/usuarios` | Who is waiting to be let in?              | Accounts by status (Pendientes first) with actions   |
 | `/admin`          | Who is reading what lately?               | Openings today / 7 / 30 days, top papers and readers |
@@ -51,6 +51,13 @@ Rules:
   One exception, from the app-screen rules: on `/admin` the main data element (the bars of
   "Periódicos más leídos") carries `--t-signal`; everything else on the dashboard stays ink.
 - Dark mode follows `prefers-color-scheme`; front pages stay printed paper, slightly dimmed.
+- **Brand exception: the Google button.** `GoogleButton.svelte` follows Google's sign-in branding
+  guidelines, which fix its colours, so they are taken as given rather than tuned to the stand:
+  `--t-google-surface` `#ffffff` / `#131314`, `--t-google-border` `#747775` / `#8e918f`,
+  `--t-google-text` `#1f1f1f` / `#e3e3e3` (light / dark), `--t-google-hover` (the text at 8% over
+  the surface), and the four logo colours `--t-google-blue` `#4285f4`, `--t-google-green`
+  `#34a853`, `--t-google-yellow` `#fbbc05`, `--t-google-red` `#ea4335` (same in both themes). The
+  "G" is never recoloured, stretched or reused elsewhere, and these tokens are for that button only.
 
 ## Type
 
@@ -90,7 +97,15 @@ Two faces, both self-hosted from npm (`@fontsource-variable/*`), no external req
 - Dashboard (`/admin`): the KPI strip is one container split by hairlines into three columns
   (Hoy / Últimos 7 días / Últimos 30 días), figures in Newsreader, no tiles or icons; section heads
   reuse the region head (3px ink rule, serif `h2`) with the period right-aligned in grey.
-- Buttons: one style, ink fill, 6px radius, 44-48px tall. Quiet actions are text links.
+- `GoogleButton.svelte` — the standard Google button (the 20px four-colour "G", 12px gap, the
+  label in Geist 500 since Roboto is not shipped, 48px tall, 6px radius, full width), used on
+  `/login` for "Iniciar sesión con Google" and, under "¿No tienes cuenta?", "Registrarse con
+  Google" (`?intent=register` asks Google for its account chooser). An "o" between two hairlines
+  separates them from the "Acceso de administración" disclosure. Unconfigured on the dev server,
+  both show disabled with a hint naming the missing `.env` keys; unconfigured in production they
+  are not rendered.
+- Buttons: one style, ink fill, 6px radius, 44-48px tall. Quiet actions are text links. The Google
+  button is the one exception (above).
 
 ## Depth and motion
 

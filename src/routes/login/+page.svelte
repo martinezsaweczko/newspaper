@@ -1,4 +1,5 @@
 <script lang="ts">
+	import GoogleButton from '#lib/components/GoogleButton.svelte';
 	import Nameplate from '#lib/components/Nameplate.svelte';
 	import PrivacyNotice from '#lib/components/PrivacyNotice.svelte';
 	import { formatDateline } from '#lib/format/date.ts';
@@ -12,13 +13,20 @@
 	// back, so it is always empty) when the username came back filled, else the username. Set as
 	// `autofocus` so the server-rendered page focuses it without JS too.
 	const focusPassword = $derived(failed && Boolean(form?.username));
-	const googleHref = $derived(
-		resolve(
-			data.next === '/' ? '/auth/google' : `/auth/google?next=${encodeURIComponent(data.next)}`
-		)
-	);
+	/** Both buttons run the same flow; registering asks Google for its account chooser. */
+	const googleHref = (intent?: 'register') => {
+		const query = [
+			data.next === '/' ? '' : `next=${encodeURIComponent(data.next)}`,
+			intent ? `intent=${intent}` : ''
+		].filter(Boolean);
+		return `${resolve('/auth/google')}${query.length ? `?${query.join('&')}` : ''}`;
+	};
+	const googleOn = $derived(data.google === 'on');
+	const googleShown = $derived(data.google !== 'off');
+	const googleHint =
+		'Google no está configurado: añade GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET y PUBLIC_ORIGIN en .env';
 	// The admin form is the only way in without Google, and stays open after a failed attempt.
-	const adminOpen = $derived(!data.google || failed);
+	const adminOpen = $derived(!googleOn || failed);
 </script>
 
 <svelte:head>
@@ -37,17 +45,25 @@
 			Inicia sesión para leer los periódicos de hoy
 		</h1>
 
-		{#if data.google}
-			<a
-				href={googleHref}
-				data-sveltekit-reload
-				class="flex h-12 items-center justify-center rounded-[6px] bg-ink text-base font-medium text-on-ink transition-opacity hover:opacity-90"
-			>
-				Entrar con Google
-			</a>
-			<p class="text-[14px] text-ink-soft">
-				La primera vez que entres, quien gestiona este quiosco tendrá que aprobar tu acceso.
-			</p>
+		{#if googleShown}
+			<GoogleButton
+				href={googleHref()}
+				label="Iniciar sesión con Google"
+				disabled={!googleOn}
+				hint={googleOn ? undefined : googleHint}
+			/>
+
+			<div class="mt-3 flex flex-col gap-3">
+				<p class="text-[14px] font-medium text-ink">¿No tienes cuenta?</p>
+				<GoogleButton
+					href={googleHref('register')}
+					label="Registrarse con Google"
+					disabled={!googleOn}
+				/>
+				<p class="text-[14px] leading-snug text-ink-soft">
+					Te registras con tu cuenta de Google; un administrador aprobará tu acceso.
+				</p>
+			</div>
 		{/if}
 
 		<div aria-live="polite">
@@ -57,7 +73,16 @@
 		</div>
 	</section>
 
-	<details class="group mt-8 border-t border-hairline pt-4" open={adminOpen}>
+	{#if googleShown}
+		<div class="mt-8 flex items-center gap-3 text-[13px] text-ink-soft" aria-hidden="true">
+			<span class="h-px flex-1 bg-hairline"></span>o<span class="h-px flex-1 bg-hairline"></span>
+		</div>
+	{/if}
+
+	<details
+		class={['group', googleShown ? 'mt-2' : 'mt-8 border-t border-hairline pt-4']}
+		open={adminOpen}
+	>
 		<summary
 			class="-mx-1 flex min-h-11 cursor-pointer list-none items-center rounded-[6px] px-1 text-[14px] font-medium text-ink [&::-webkit-details-marker]:hidden"
 		>
@@ -118,7 +143,7 @@
 				disabled={submitting}
 				class={[
 					'h-12 cursor-pointer rounded-[6px] text-base font-medium transition-opacity disabled:cursor-progress disabled:opacity-70',
-					data.google
+					googleOn
 						? 'border border-ink bg-transparent text-ink hover:bg-shelf'
 						: 'bg-ink text-on-ink hover:opacity-90'
 				]}

@@ -35,7 +35,8 @@ npm run dev                            # http://localhost:5173 (migrates the dat
 The dev database listens on host port 3307 so it never clashes with another MySQL on 3306. It
 keeps running in the background; `podman compose stop db` stops it. Migrations in `drizzle/` are
 applied automatically when the server starts. Without Google configured, `/login` offers only the
-local admin form; see [Google sign-in](#google-sign-in) to add the Google button.
+local admin form (the dev server shows the Google buttons disabled, with a hint naming the missing
+`.env` keys); see [Google sign-in](#google-sign-in) to turn them on.
 
 Drop real PDFs into `./newspapers` (git-ignored) or point `NEWSPAPER_DIR` elsewhere.
 
@@ -134,7 +135,10 @@ Variables are declared in `src/env.ts`; see `.env.example`.
 
 ## Google sign-in
 
-Everyone signs in with Google. A new account is **pending**: it sees a "pendiente de aprobación"
+Everyone signs in with Google: `/login` shows the standard "Iniciar sesión con Google" button and,
+under "¿No tienes cuenta?", "Registrarse con Google". Both run the same flow; registering asks
+Google for its account chooser (`/auth/google?intent=register` → `prompt=select_account`), so
+people can pick the right account. A new account is **pending**: it sees a "pendiente de aprobación"
 page (with the privacy notice) until an admin approves it at **Administración → Usuarios**
 (`/admin/usuarios`), where admins also block and unblock accounts and make or remove other
 admins. Blocking or a role change signs the account out at once. Admins cannot block or demote

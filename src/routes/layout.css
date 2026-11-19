@@ -19,6 +19,20 @@
 	--t-error: #a3201c;
 	--t-shadow: 20 18 12; /* rgb triplet for the paper shadow */
 	--t-page-dim: 1; /* front pages are shown as printed */
+
+	/*
+	 * Google sign-in button: the one documented exception to the achromatic palette. Values come
+	 * from Google's sign-in branding guidelines and must not be tuned to the stand (DESIGN.md).
+	 * The four logo colours are the same in both themes.
+	 */
+	--t-google-surface: #ffffff;
+	--t-google-border: #747775;
+	--t-google-text: #1f1f1f;
+	--t-google-hover: color-mix(in srgb, var(--t-google-text) 8%, var(--t-google-surface));
+	--t-google-blue: #4285f4;
+	--t-google-green: #34a853;
+	--t-google-yellow: #fbbc05;
+	--t-google-red: #ea4335;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -36,6 +50,9 @@
 		--t-error: #ff8c84;
 		--t-shadow: 0 0 0;
 		--t-page-dim: 0.9; /* newsprint under a lamp, not a light box */
+		--t-google-surface: #131314;
+		--t-google-border: #8e918f;
+		--t-google-text: #e3e3e3;
 	}
 }
 
@@ -50,6 +67,14 @@
 	--color-on-ink: var(--t-on-ink);
 	--color-signal: var(--t-signal);
 	--color-error: var(--t-error);
+	--color-google-surface: var(--t-google-surface);
+	--color-google-border: var(--t-google-border);
+	--color-google-text: var(--t-google-text);
+	--color-google-hover: var(--t-google-hover);
+	--color-google-blue: var(--t-google-blue);
+	--color-google-green: var(--t-google-green);
+	--color-google-yellow: var(--t-google-yellow);
+	--color-google-red: var(--t-google-red);
 
 	--font-serif: 'Newsreader Variable', 'Newsreader', Georgia, 'Times New Roman', serif;
 	--font-sans: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, sans-serif;

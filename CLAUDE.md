@@ -73,7 +73,10 @@ See README.md for the product overview, configuration and deploy.
   The callback (a GET: state is its CSRF check) verifies iss/aud/exp/nonce, requires
   `email_verified`, then `signInGoogleUser` upserts by `google_sub` (links a pre-created row by
   email). New accounts are `pending`/`user`; `ADMIN_EMAILS` (case-insensitive, at creation only)
-  makes them `approved`/`admin`. Off (button hidden, routes 404) without `GOOGLE_CLIENT_ID`,
+  makes them `approved`/`admin`. `/login` shows `GoogleButton.svelte` twice (sign in; register =
+  `?intent=register`, whitelisted by `parseIntent`, sends `prompt=select_account`; sign-in sends
+  no prompt). Off (routes 404; buttons hidden in production, disabled with a hint on the dev
+  server: load's `google: 'on' | 'dev-off' | 'off'`) without `GOOGLE_CLIENT_ID`,
   `GOOGLE_CLIENT_SECRET` and `PUBLIC_ORIGIN`. `GOOGLE_ISSUER` points tests at `auth/fake-oidc.ts`.
   Sessions: `{k:'g', id, exp, v}` for Google (v = `users.session_version`) next to the local
   `{u, exp, v}`; `locals.user` is `CurrentUser` (`{ id, kind, email, name, role, status }`,

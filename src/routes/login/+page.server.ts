@@ -6,6 +6,7 @@ import { SESSION_COOKIE, SESSION_TTL_SECONDS, signSession } from '#lib/server/au
 import { authenticate } from '#lib/server/auth/users.ts';
 import { config, sessionSecret } from '#lib/server/config.ts';
 import { recordLogin } from '#lib/server/observability/metrics.ts';
+import { dev } from '$app/env';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -17,6 +18,13 @@ const GOOGLE_ERRORS: Record<string, string> = {
 	cuenta: 'Ese correo ya está asociado a otra cuenta de Google.'
 };
 
+/**
+ * Google sign-in on this page: `on` shows the buttons; `dev-off` (dev server, not configured)
+ * shows them disabled with a hint on how to configure it; `off` (production, not configured)
+ * hides them. /auth/google answers 404 whenever it is not configured.
+ */
+type GoogleState = 'on' | 'dev-off' | 'off';
+
 export const load: PageServerLoad = ({ locals, url }) => {
 	const next = sanitizeNext(url.searchParams.get('next'));
 	if (locals.user) redirect(303, next);
@@ -24,7 +32,7 @@ export const load: PageServerLoad = ({ locals, url }) => {
 	return {
 		next,
 		today: isoFromLocalDate(new Date()),
-		google: googleClient() !== null,
+		google: (googleClient() ? 'on' : dev ? 'dev-off' : 'off') as GoogleState,
 		googleError: code ? (GOOGLE_ERRORS[code] ?? GOOGLE_ERRORS.google) : null
 	};
 };
