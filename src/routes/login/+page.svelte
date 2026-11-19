@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Nameplate from '#lib/components/Nameplate.svelte';
+	import PrivacyNotice from '#lib/components/PrivacyNotice.svelte';
 	import { formatDateline } from '#lib/format/date.ts';
 	import { resolve } from '$app/paths';
 	import type { PageProps } from './$types';
@@ -126,4 +127,6 @@
 			</button>
 		</form>
 	</details>
+
+	<PrivacyNotice class="mt-8" />
 </main>

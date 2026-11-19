@@ -1,11 +1,13 @@
 <script lang="ts">
 	import type { CurrentUser } from '#lib/types.ts';
+	import { resolve } from '$app/paths';
 	import Nameplate from './Nameplate.svelte';
 
 	let {
 		user,
 		skipLabel = 'Saltar a los periódicos'
 	}: { user: CurrentUser | null; skipLabel?: string } = $props();
+	const reader = $derived(user?.status === 'approved');
 </script>
 
 <a
@@ -21,6 +23,13 @@
 				<span class="hidden sm:inline"
 					>Sesión iniciada como <span class="text-ink">{user.name}</span></span
 				>
+				{#if reader && user.role === 'admin'}
+					<a
+						href={resolve('/admin')}
+						class="-my-2 flex min-h-11 items-center rounded-[6px] px-2 text-ink underline-offset-4 hover:underline"
+						>Administración</a
+					>
+				{/if}
 				<form method="POST" action="/logout">
 					<button
 						type="submit"
