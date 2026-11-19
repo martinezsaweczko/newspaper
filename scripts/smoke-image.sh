@@ -87,7 +87,7 @@ case "$tables" in
 esac
 
 # Google is not configured: no button, and its routes are 404
-if grep -q 'Entrar con Google' "$WORK/login.html"; then fail "the Google button is shown"; fi
+if grep -q 'con Google' "$WORK/login.html"; then fail "the Google button is shown"; fi
 code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/auth/google")
 echo "GET /auth/google -> $code"
 [ "$code" = 404 ] || fail "/auth/google should be 404 without Google configured"
