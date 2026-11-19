@@ -1,5 +1,5 @@
 # podman compose up -d   (or docker compose up -d)
-# Configure in .env (see .env.example). Add users with:
+# Configure in .env (see .env.example). Add a local admin (fallback login) with:
 #   podman compose exec newspaper npm run user:add -- <name>
 #
 # Development (`npm run dev` on the host) needs only the database: `podman compose up -d db`
@@ -48,6 +48,11 @@ services:
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       # the compose network address of the db service, never the host's 127.0.0.1:3307
       DATABASE_URL: mysql://newspaper:${MYSQL_PASSWORD:-newspaper}@db:3306/newspaper
+      # Google sign-in (see README "Google sign-in"); unset = only the local admin login
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
       # source addresses allowed to scrape /metrics (comma-separated CIDRs; default = private ranges)
       METRICS_ALLOW: ${METRICS_ALLOW:-}
       # traces: set an OTLP/HTTP endpoint (e.g. http://jaeger:4318) to export; unset = no traces

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Nameplate from '#lib/components/Nameplate.svelte';
 	import { formatDateline } from '#lib/format/date.ts';
+	import { resolve } from '$app/paths';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -10,6 +11,13 @@
 	// back, so it is always empty) when the username came back filled, else the username. Set as
 	// `autofocus` so the server-rendered page focuses it without JS too.
 	const focusPassword = $derived(failed && Boolean(form?.username));
+	const googleHref = $derived(
+		resolve(
+			data.next === '/' ? '/auth/google' : `/auth/google?next=${encodeURIComponent(data.next)}`
+		)
+	);
+	// The admin form is the only way in without Google, and stays open after a failed attempt.
+	const adminOpen = $derived(!data.google || failed);
 </script>
 
 <svelte:head>
@@ -23,65 +31,99 @@
 		<span>Solo para suscriptores</span>
 	</div>
 
-	<form method="POST" class="mt-10 flex flex-col gap-5" onsubmit={() => (submitting = true)}>
-		<h1 class="font-serif text-[24px] leading-tight font-semibold">
+	<section class="mt-10 flex flex-col gap-5" aria-labelledby="login-title">
+		<h1 id="login-title" class="font-serif text-[24px] leading-tight font-semibold">
 			Inicia sesión para leer los periódicos de hoy
 		</h1>
-		<input type="hidden" name="next" value={data.next} />
 
-		<div class="flex flex-col gap-2">
-			<label for="username" class="text-[14px] font-medium">Usuario</label>
-			<!-- Uncontrolled (defaultValue): a controlled value={...} was re-applied as '' when onsubmit
-			     flipped `submitting`, so the browser posted an empty username. -->
-			<!-- svelte-ignore a11y_autofocus (only after a failed submit: focus goes to the field to fix) -->
-			<input
-				id="username"
-				name="username"
-				type="text"
-				autocomplete="username"
-				autocapitalize="none"
-				spellcheck="false"
-				required
-				defaultValue={form?.username ?? ''}
-				aria-invalid={failed ? 'true' : undefined}
-				aria-describedby={failed ? 'login-error' : undefined}
-				autofocus={failed && !focusPassword}
-				class="h-12 rounded-[6px] border border-control bg-sheet px-3 text-base text-ink"
-			/>
-		</div>
-
-		<div class="flex flex-col gap-2">
-			<label for="password" class="text-[14px] font-medium">Contraseña</label>
-			<!-- svelte-ignore a11y_autofocus (only after a failed submit: focus goes to the field to fix) -->
-			<input
-				id="password"
-				name="password"
-				type="password"
-				autocomplete="current-password"
-				required
-				aria-invalid={failed ? 'true' : undefined}
-				aria-describedby={failed ? 'login-error' : undefined}
-				autofocus={focusPassword}
-				class="h-12 rounded-[6px] border border-control bg-sheet px-3 text-base text-ink"
-			/>
-		</div>
+		{#if data.google}
+			<a
+				href={googleHref}
+				data-sveltekit-reload
+				class="flex h-12 items-center justify-center rounded-[6px] bg-ink text-base font-medium text-on-ink transition-opacity hover:opacity-90"
+			>
+				Entrar con Google
+			</a>
+			<p class="text-[14px] text-ink-soft">
+				La primera vez que entres, quien gestiona este quiosco tendrá que aprobar tu acceso.
+			</p>
+		{/if}
 
 		<div aria-live="polite">
-			{#if form?.message}
-				<p id="login-error" class="text-[14px] font-medium text-error">{form.message}</p>
+			{#if data.googleError}
+				<p class="text-[14px] font-medium text-error">{data.googleError}</p>
 			{/if}
 		</div>
+	</section>
 
-		<button
-			type="submit"
-			disabled={submitting}
-			class="h-12 cursor-pointer rounded-[6px] bg-ink text-base font-medium text-on-ink transition-opacity hover:opacity-90 disabled:cursor-progress disabled:opacity-70"
+	<details class="group mt-8 border-t border-hairline pt-4" open={adminOpen}>
+		<summary
+			class="-mx-1 flex min-h-11 cursor-pointer list-none items-center rounded-[6px] px-1 text-[14px] font-medium text-ink [&::-webkit-details-marker]:hidden"
 		>
-			{submitting ? 'Entrando…' : 'Entrar'}
-		</button>
+			<span
+				aria-hidden="true"
+				class="mr-2 inline-block w-3 text-ink-soft transition-transform group-open:rotate-90"
+				>›</span
+			>Acceso de administración
+		</summary>
+		<form method="POST" class="mt-3 flex flex-col gap-5" onsubmit={() => (submitting = true)}>
+			<input type="hidden" name="next" value={data.next} />
 
-		<p class="text-[14px] text-ink-soft">
-			¿No tienes cuenta? Pide a quien gestiona este quiosco que te dé de alta.
-		</p>
-	</form>
+			<div class="flex flex-col gap-2">
+				<label for="username" class="text-[14px] font-medium">Usuario</label>
+				<!-- Uncontrolled (defaultValue): a controlled value={...} was re-applied as '' when onsubmit
+			     flipped `submitting`, so the browser posted an empty username. -->
+				<!-- svelte-ignore a11y_autofocus (only after a failed submit: focus goes to the field to fix) -->
+				<input
+					id="username"
+					name="username"
+					type="text"
+					autocomplete="username"
+					autocapitalize="none"
+					spellcheck="false"
+					required
+					defaultValue={form?.username ?? ''}
+					aria-invalid={failed ? 'true' : undefined}
+					aria-describedby={failed ? 'login-error' : undefined}
+					autofocus={failed && !focusPassword}
+					class="h-12 rounded-[6px] border border-control bg-sheet px-3 text-base text-ink"
+				/>
+			</div>
+
+			<div class="flex flex-col gap-2">
+				<label for="password" class="text-[14px] font-medium">Contraseña</label>
+				<!-- svelte-ignore a11y_autofocus (only after a failed submit: focus goes to the field to fix) -->
+				<input
+					id="password"
+					name="password"
+					type="password"
+					autocomplete="current-password"
+					required
+					aria-invalid={failed ? 'true' : undefined}
+					aria-describedby={failed ? 'login-error' : undefined}
+					autofocus={focusPassword}
+					class="h-12 rounded-[6px] border border-control bg-sheet px-3 text-base text-ink"
+				/>
+			</div>
+
+			<div aria-live="polite">
+				{#if form?.message}
+					<p id="login-error" class="text-[14px] font-medium text-error">{form.message}</p>
+				{/if}
+			</div>
+
+			<button
+				type="submit"
+				disabled={submitting}
+				class={[
+					'h-12 cursor-pointer rounded-[6px] text-base font-medium transition-opacity disabled:cursor-progress disabled:opacity-70',
+					data.google
+						? 'border border-ink bg-transparent text-ink hover:bg-shelf'
+						: 'bg-ink text-on-ink hover:opacity-90'
+				]}
+			>
+				{submitting ? 'Entrando…' : 'Entrar'}
+			</button>
+		</form>
+	</details>
 </main>

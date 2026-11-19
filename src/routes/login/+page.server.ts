@@ -1,5 +1,5 @@
 import { isoFromLocalDate } from '#lib/format/date.ts';
-import { loginThrottle, users } from '#lib/server/auth/index.ts';
+import { googleClient, loginThrottle, users } from '#lib/server/auth/index.ts';
 import { throttleMessage } from '#lib/server/auth/throttle.ts';
 import { sanitizeNext } from '#lib/server/auth/next.ts';
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, signSession } from '#lib/server/auth/session.ts';
@@ -9,10 +9,24 @@ import { recordLogin } from '#lib/server/observability/metrics.ts';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
+/** `?error=` codes set by /auth/google/callback. */
+const GOOGLE_ERRORS: Record<string, string> = {
+	google: 'No se pudo iniciar sesión con Google. Vuelve a intentarlo.',
+	cancelado: 'Has cancelado el acceso con Google.',
+	'sin-verificar': 'Tu cuenta de Google no tiene el correo verificado.',
+	cuenta: 'Ese correo ya está asociado a otra cuenta de Google.'
+};
+
 export const load: PageServerLoad = ({ locals, url }) => {
 	const next = sanitizeNext(url.searchParams.get('next'));
 	if (locals.user) redirect(303, next);
-	return { next, today: isoFromLocalDate(new Date()) };
+	const code = url.searchParams.get('error');
+	return {
+		next,
+		today: isoFromLocalDate(new Date()),
+		google: googleClient() !== null,
+		googleError: code ? (GOOGLE_ERRORS[code] ?? GOOGLE_ERRORS.google) : null
+	};
 };
 
 export const actions: Actions = {

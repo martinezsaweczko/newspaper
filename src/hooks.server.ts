@@ -1,9 +1,10 @@
 import { building } from '$app/env';
-import { users } from '#lib/server/auth/index.ts';
+import { decideAccess, resolveUser, userLabel } from '#lib/server/auth/current.ts';
+import { db, userCache, users } from '#lib/server/auth/index.ts';
 import { isCrossSiteForm } from '#lib/server/auth/origin.ts';
-import { SESSION_COOKIE, sessionUser } from '#lib/server/auth/session.ts';
+import { SESSION_COOKIE } from '#lib/server/auth/session.ts';
 import { config, DEV_USER, sessionSecret } from '#lib/server/config.ts';
-import { closeDbHandle, getDbHandle } from '#lib/server/db/index.ts';
+import { closeDbHandle } from '#lib/server/db/index.ts';
 import { redactUrl, runMigrations, waitForDb } from '#lib/server/db/migrate.ts';
 import { seedIgnoreFile } from '#lib/server/library/ignore.ts';
 import { seedRegionsFile } from '#lib/server/library/regions.ts';
@@ -20,17 +21,13 @@ export const init: ServerInit = async () => {
 	initMetrics();
 	// wait for MySQL (container start order), then apply pending migrations from /drizzle
 	await waitForDb(config.databaseUrl);
-	await runMigrations(getDbHandle(config.databaseUrl).db);
+	await runMigrations(db());
 	console.log(`[db] migrations applied on ${redactUrl(config.databaseUrl)}`);
 	// adapter-node emits this after the HTTP server has closed; the pool's sockets would otherwise
 	// keep the process alive until the container runtime kills it
 	process.once('sveltekit:shutdown' as 'beforeExit', () => void closeDbHandle());
+	if (!config.google) console.log('[auth] Google sign-in is not configured: local admins only.');
 };
-
-/** Routes reachable without a session. Static files are served by adapter-node before this hook. */
-function isPublic(pathname: string): boolean {
-	return pathname === '/login' || pathname.startsWith('/_app/') || pathname === '/robots.txt';
-}
 
 export const handle: Handle = async (input) => {
 	const started = performance.now();
@@ -53,20 +50,29 @@ const guarded: Handle = async ({ event, resolve }) => {
 		});
 	}
 
-	// rejects removed users and tokens older than the user's sessionVersion (password change,
-	// `npm run user:logout-all`); users.json is re-read only when it changes
-	event.locals.user = sessionUser(event.cookies.get(SESSION_COOKIE), sessionSecret(), users);
+	// Rejects removed users and tokens older than the account's session version (password change,
+	// `npm run user:logout-all`, block, role change). users.json is re-read only when it changes;
+	// Google accounts come from a 5-second cache, so a page of thumbnails is one query.
+	event.locals.user = await resolveUser(event.cookies.get(SESSION_COOKIE), {
+		secret: sessionSecret(),
+		localUsers: users,
+		loadUser: (id) => userCache.get(id)
+	});
 	if (!event.locals.user && config.authDisabled) event.locals.user = DEV_USER;
-	if (event.locals.user) event.tracing.root.setAttribute('newspaper.user', event.locals.user);
+	if (event.locals.user) {
+		event.tracing.root.setAttribute('newspaper.user', userLabel(event.locals.user));
+	}
 
 	const { pathname, search } = event.url;
-	if (!event.locals.user && !isPublic(pathname)) {
-		if (event.request.method !== 'GET' && event.request.method !== 'HEAD') {
-			return new Response('Inicia sesión primero.', { status: 401 });
-		}
-		const next =
-			pathname === '/' && !search ? '' : `?next=${encodeURIComponent(pathname + search)}`;
-		return new Response(null, { status: 303, headers: { location: `/login${next}` } });
+	const access = decideAccess(event.locals.user, event.request.method, pathname, search);
+	if (access.kind === 'redirect') {
+		return new Response(null, { status: 303, headers: { location: access.location } });
+	}
+	if (access.kind === 'deny') {
+		return new Response(access.message, {
+			status: access.status,
+			headers: { 'content-type': 'text/plain; charset=utf-8' }
+		});
 	}
 
 	const response = await resolve(event);

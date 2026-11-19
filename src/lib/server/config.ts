@@ -1,13 +1,21 @@
 import {
+	ADMIN_EMAILS,
 	AUTH_DISABLED,
 	COOKIE_SECURE,
 	DATA_DIR,
 	DATABASE_URL,
+	GOOGLE_CLIENT_ID,
+	GOOGLE_CLIENT_SECRET,
+	GOOGLE_ISSUER,
 	NEWSPAPER_DIR,
+	PUBLIC_ORIGIN,
 	SESSION_SECRET
 } from '$app/env/private';
 import { dev } from '$app/env';
 import path from 'node:path';
+import type { CurrentUser } from '../types.ts';
+import { parseAdminEmails } from './auth/accounts.ts';
+import { localAdmin } from './auth/current.ts';
 
 /** Resolved runtime configuration (env declared in src/env.ts). */
 export const config = {
@@ -16,11 +24,31 @@ export const config = {
 	cookieSecure: COOKIE_SECURE,
 	/** Testing only: skip the login. Honoured by the dev server only, never by `node build`. */
 	authDisabled: dev && AUTH_DISABLED,
-	databaseUrl: DATABASE_URL
+	databaseUrl: DATABASE_URL,
+	/** Emails that become approved admins when their account is created (lowercase). */
+	adminEmails: parseAdminEmails(ADMIN_EMAILS),
+	/** Google sign-in, or null when it is not configured (the button is hidden, routes 404). */
+	google: googleConfig()
 };
 
-/** The user every request runs as while `authDisabled` is on. */
-export const DEV_USER = 'tester';
+function googleConfig() {
+	if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) return null;
+	if (!PUBLIC_ORIGIN) {
+		console.warn(
+			'[newspaper] GOOGLE_CLIENT_ID is set but PUBLIC_ORIGIN is not: Google sign-in is off.'
+		);
+		return null;
+	}
+	return {
+		issuer: GOOGLE_ISSUER,
+		clientId: GOOGLE_CLIENT_ID,
+		clientSecret: GOOGLE_CLIENT_SECRET,
+		redirectUri: `${PUBLIC_ORIGIN}/auth/google/callback`
+	};
+}
+
+/** The user every request runs as while `authDisabled` is on: a local admin. */
+export const DEV_USER: CurrentUser = localAdmin('tester');
 
 if (AUTH_DISABLED) {
 	console.warn(
