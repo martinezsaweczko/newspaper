@@ -167,6 +167,32 @@ proxy with a real certificate for a public name (it may resolve to the LAN addre
 `COOKIE_SECURE=true`. The flow is OpenID Connect with PKCE (S256), `state` and `nonce`; the ID
 token's signature, issuer, audience, expiry and nonce are checked and a verified email is required.
 
+## Reading log and dashboard
+
+Every time a reader opens an edition (or downloads it with `?download=1`) the app writes one row
+to the `reading_events` table: who (the Google account, or `local_username` for a local admin),
+which edition (file path, newspaper slug, region, edition date), open or download, and when. A
+PDF viewer fetches a file in many Range chunks; only the first one (no Range, or a Range from
+byte 0) counts, and the same reader + edition + kind is recorded once per 30 minutes. A database
+failure never breaks the PDF; it is logged once as a warning.
+
+Admins see it under **Administración**:
+
+- **Resumen** (`/admin`): openings, active readers and newspapers read today, in the last 7 and 30
+  days; the most read newspapers and the most active readers (30 days); the 20 latest openings;
+  and a "Pendientes: N" link when accounts are waiting for approval.
+- **Lecturas** (`/admin/lecturas`): the whole log, 50 per page, filtered in the URL by `usuario`
+  (an account id, or `local:<name>`), `periodico` (slug), `region`, and `desde`/`hasta` (typed as
+  `dd/mm/aaaa`). Clicking a reader or a newspaper anywhere filters by it. **Descargar CSV**
+  (`/admin/lecturas.csv`, same filters) exports it for a spreadsheet (`;`-separated, UTF-8).
+- **Usuarios** (`/admin/usuarios`): approvals and accounts (above).
+
+**Privacy.** The reading log is kept indefinitely, by the operator's choice: there is no
+automatic deletion. Under the GDPR, people must be told their reading activity is recorded; the
+notice is shown on `/login` and on the pending page. Deleting a Google account's `users` row
+deletes its reading rows too (`ON DELETE CASCADE`). Metrics never carry who read what (see
+Observability).
+
 ## Local admins (users.json)
 
 The fallback login, under "Acceso de administración" on `/login`, for when Google is not

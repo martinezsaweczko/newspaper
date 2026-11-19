@@ -29,11 +29,12 @@ Backed by a local MySQL 8.4 container.
       google + local-admin accounts, revocation via session_version (writer A) — `994d782`
 - [x] T3 Registration → pending page with privacy notice; admin approvals/users page; ADMIN_EMAILS
       bootstrap; guard: only approved users read, only admins see /admin (writer A) — `6e15df2`
-- [ ] T4 Reading log: record edition opens (deduped against PDF Range requests), dashboard with
-      filters (user, newspaper, date) (writer B)
-- [ ] T5 Metrics + traces: page views, editions opened, front pages viewed by newspaper/region;
-      user id + newspaper on spans (writer B)
-- [ ] T6 CI with MySQL service, smoke test with DB, compose/README/CLAUDE.md (writer B)
+- [x] T4 Reading log: record edition opens (deduped against PDF Range requests), dashboard with
+      filters (user, newspaper, date) (writer B) — `a4be192`, polish `de56ecb`, `deccfdf`
+- [x] T5 Metrics + traces: page views, editions opened, front pages viewed by newspaper/region;
+      user id + newspaper on spans (writer B) — `1b99700`
+- [x] T6 CI with MySQL service, smoke test with DB, compose/README/CLAUDE.md (writer B) —
+      `9960282`, docs in the following `docs:` commit
 
 ## Checks
 `npm run format`, `npm run lint`, `npm run check`, `npm run test:unit -- --run` (DB tests run
@@ -61,4 +62,37 @@ Strategy: ask-on-risk. Forecast well above 400 lines, so the work is split into 
     `/admin/usuarios`; no self-block button; cross-site POST 403; callback without flow cookie →
     `/login?error=google`. SIGTERM now exits in ~1 s (the pool is closed on `sveltekit:shutdown`).
   - Dev DB container `newspaper-db-1` left running.
-
+- Writer B (19/11/2026), T4–T6: `a4be192` feat(reading), `de56ecb` + `deccfdf` style(admin),
+  `1b99700` feat(observability), `9960282` ci, then a docs commit (README, CLAUDE.md, DESIGN.md,
+  this file).
+  - Decisions: dedupe = per-process TTL map (set before the first await, so a viewer's parallel
+    requests cannot both insert) + SQL lookup over `(user_id|local_username, created_at)` as the
+    fallback after a restart; local CLI admins are logged with `local_username` (`user_id` NULL),
+    exactly one enforced in code (MySQL forbids a CHECK on a column with ON DELETE CASCADE); a
+    revalidation (304) of the first chunk counts as an opening; gauges via `cachedLoader` (one DB
+    query per 60 s at most, failures included, 2 s scrape wait); page views also count
+    `__data.json` client navigations; CI drift check = `npm run db:generate` then `git status
+    --porcelain -- drizzle` empty (catches untracked files); CI sets `REQUIRE_TEST_DB=1` so DB tests
+    fail rather than skip.
+  - `npm run db:generate`: `drizzle/0001_reading_local_admin.sql` (user_id nullable,
+    local_username, index (local_username, created_at)); re-run: "No schema changes, nothing to
+    migrate". `0000` untouched.
+  - `npm run format` / `npm run lint` / `npm run check`: clean (0 errors, 0 warnings).
+  - `npm run test:unit -- --run`: 25 files, 336 tests passed, 0 skipped; 18 DB tests against the
+    dev container (7 admin, 3 google, 1 migrate, 6 reading log, 1 gauges).
+  - `npm run build` (with `DATABASE_URL`): done.
+  - `node build` smoke (PORT 3141, METRICS_PORT 9471, throwaway DB, fake OIDC, playwright): 19/19 —
+    reader opens A (plain, `bytes=0-`, `bytes=200-`, plain again), B, downloads A → exactly 3 rows;
+    local admin opening → `local_username=root`; `/admin` KPIs (4 openings, 2 readers, 2 papers),
+    20-latest table; reader link → `/admin/lecturas?usuario=<id>` (3 rows); `periodico` filter;
+    form with `dd/mm/yyyy` dates; CSV with the same filters (header + 3) and unfiltered (4, "admin
+    local: root"); reader 403 on the CSV; `editions_opened_total` equals the log per
+    newspaper/region/kind; page views, front_pages_viewed, users{status}, readers_active{window}.
+    `OTEL_TRACES_EXPORTER=console` run: `newspaper.user.id`, `.role`, `newspaper.masthead`,
+    `.region`, `.edition_date`, `newspaper.reading.record` with deduped true and false, no email.
+  - Image: `podman build --format docker -t newspaper:smoke .` then `scripts/smoke-image.sh`
+    (ports 3142/9472): passed (SHOW TABLES, no Google button, `/auth/google` 404, `/admin` 200,
+    thumb `image/jpeg`, one `reading_events` row, healthcheck, `newspaper_editions_opened_total`);
+    containers, network and volume removed.
+  - Taste inspector `--app` on `/admin` and `/admin/lecturas` (dev server, AUTH_DISABLED bypass
+    admin, seeded throwaway DB): 0 FAIL, 0 WARN.

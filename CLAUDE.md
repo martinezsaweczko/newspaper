@@ -91,6 +91,15 @@ See README.md for the product overview, configuration and deploy.
   `/login`, `/auth/google/**` and static assets; `next` redirects are sanitised to same-site relative paths, checked
   after dot-segment normalisation. In-memory login throttle (`createLoginThrottle`): per IP+user 5,
   per user 10, per IP 50 failures / 15 min, swept and capped.
+- Reading log: `src/lib/server/reading/log.ts` (pure over Drizzle). `/pdf/[id]` records an `open`
+  (or `download`) for the first chunk only (no Range or `bytes=0-`), deduped per reader + edition
+  + kind for 30 min (per-process TTL map set before the first await, SQL lookup as the fallback);
+  failures never fail the PDF (warn once). Rows carry `user_id` (Google) or `local_username`
+  (users.json admin), exactly one, enforced in code (MySQL forbids a CHECK on a cascading FK
+  column). Kept forever (operator's choice; privacy notice on `/login` and `/pendiente`). The
+  dashboard (`/admin` Resumen, `/admin/lecturas` with URL filters `usuario`/`periodico`/`region`/
+  `desde`/`hasta` and 50 per page, `/admin/lecturas.csv`) is built by `reading/views.ts`; links
+  via `#lib/admin-url.ts`. Times shown in server local time (`isoFromLocalDateTime`).
 - Front pages: `/thumb/[id]` renders page 1 with `pdftoppm` (poppler-utils, `execFile`, timeout),
   cached in `DATA_DIR/thumbs/` keyed by path+mtime+size, in-flight dedupe, small concurrency cap.
 - PDFs: `/pdf/[id]` streams with HTTP Range (206) and inline disposition; `?download=1` for attachment.
@@ -104,7 +113,15 @@ See README.md for the product overview, configuration and deploy.
   `node:http` server on `METRICS_PORT` (9464, `0` disables, busy port = warning) that checks the
   socket peer against `METRICS_ALLOW` CIDRs (`cidr.ts`, pure, never X-Forwarded-For); 404 for
   other paths, 403 for other sources. Instruments live in `metrics.ts` (API global, created
-  lazily); labels stay low-cardinality (route id, never path/user/id/filename). OTel packages are
+  lazily); labels stay low-cardinality (route id, masthead slug, region; never path/user/email/
+  id/filename). App series: `newspaper_page_views_total{route}` (2xx GET HTML pages and
+  `__data.json` navigations), `newspaper_editions_opened_total{newspaper,region,kind}` (fed by the
+  reading log's `onRecorded`, so it equals the log), `newspaper_front_pages_viewed_total
+  {newspaper,region}` (200 only), gauges `newspaper_users{status}` and
+  `newspaper_readers_active{window}` (DB via `cachedLoader`: one query per 60 s at most, failures
+  included, 2 s scrape wait). Spans: root `newspaper.user.id` (users.id or `local:<name>`, never
+  the email) + `newspaper.user.role`; `/pdf` and `/thumb` handler spans `newspaper.masthead`
+  (slug), `newspaper.region`, `newspaper.edition_date`; `newspaper.reading.record` with `deduped`. OTel packages are
   `dependencies` (external in the bundle), so the image ships pruned `node_modules`; compose
   publishes 9464 on `${METRICS_BIND:-127.0.0.1}` only.
 
@@ -133,11 +150,17 @@ at `/data`; config in `.env` (see `.env.example`).
 
 - `.github/workflows/pipeline.yml` is the entry pipeline (pull requests, push to `main`, `vX.Y.Z`
   tags, with concurrency): job `test` calls the reusable `ci.yml` (also `workflow_dispatch`):
-  Node from `.nvmrc`, `npm ci`, `poppler-utils`, lint, check, unit tests, build. On a `vX.Y.Z` tag
-  that is on `main`, job `image` builds with `podman build --format docker` (keeps HEALTHCHECK) plus
-  OCI labels, runs `scripts/smoke-image.sh` (synthetic editions, a CLI-made user, `/login`, a real
-  login, `/thumb/<id>` as `image/jpeg`, `podman healthcheck run`, `:9464/metrics` with `newspaper_`
-  series; logs on failure) and pushes `ghcr.io/<owner>/<repo>` tagged X.Y.Z / X.Y / latest; job
+  Node from `.nvmrc`, `npm ci`, `poppler-utils`, a `mysql:8.4` service (health-checked, on :3307)
+  with `DATABASE_URL` / `TEST_DATABASE_ADMIN_URL` and `REQUIRE_TEST_DB=1` (DB tests fail instead
+  of skipping), a migration drift check (`npm run db:generate`, then `git status --porcelain --
+  drizzle` must be empty, untracked files included), lint, check, unit tests, build. On a `vX.Y.Z`
+  tag that is on `main`, job `image` builds with `podman build --format docker` (keeps
+  HEALTHCHECK) plus OCI labels, runs `scripts/smoke-image.sh` (MySQL 8.4 + the app on a private
+  podman network, PID-suffixed names, all removed after; tables from the auto-migrate via `SHOW
+  TABLES`, `/login` without the Google button, `/auth/google` 404, a CLI-made local admin logs in,
+  `/admin` 200, `/thumb/<id>` as `image/jpeg`, `/pdf/<id>` writes a `reading_events` row,
+  `podman healthcheck run`, `:9464/metrics` with `newspaper_editions_opened_total`; logs on
+  failure) and pushes `ghcr.io/<owner>/<repo>` tagged X.Y.Z / X.Y / latest; job
   `release` runs `gh release create --generate-notes`.
 - Workflows cannot run locally: run `scripts/smoke-image.sh localhost/newspaper:smoke` after a
   local `podman build --format docker -t newspaper:smoke .` instead.

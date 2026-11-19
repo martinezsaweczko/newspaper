@@ -14,13 +14,15 @@ interface around them stays ink on newsprint.
 
 ## The one question per screen
 
-| Screen            | Question                                  | Answered by                                         |
-| ----------------- | ----------------------------------------- | --------------------------------------------------- |
-| `/`               | What is on the stand today?               | Front pages grouped by region, Nacional first       |
-| `/paper/[slug]`   | What back issues of this paper are there? | Its front pages, newest first, with a download link |
-| `/login`          | Who are you?                              | A sign-in form under the nameplate                  |
-| `/pendiente`      | Can I read yet?                           | The pending notice, sign-out and the privacy notice |
-| `/admin/usuarios` | Who is waiting to be let in?              | Accounts by status (Pendientes first) with actions  |
+| Screen            | Question                                  | Answered by                                          |
+| ----------------- | ----------------------------------------- | ---------------------------------------------------- |
+| `/`               | What is on the stand today?               | Front pages grouped by region, Nacional first        |
+| `/paper/[slug]`   | What back issues of this paper are there? | Its front pages, newest first, with a download link  |
+| `/login`          | Who are you?                              | A sign-in form under the nameplate                   |
+| `/pendiente`      | Can I read yet?                           | The pending notice, sign-out and the privacy notice  |
+| `/admin/usuarios` | Who is waiting to be let in?              | Accounts by status (Pendientes first) with actions   |
+| `/admin`          | Who is reading what lately?               | Openings today / 7 / 30 days, top papers and readers |
+| `/admin/lecturas` | Who opened which edition, and when?       | The filtered reading log, 50 per page, and its CSV   |
 
 ## Colour
 
@@ -46,6 +48,8 @@ Rules:
 - Never hard-code a colour in a component; add a token with a light and a dark value instead.
   (`app.html` repeats `--t-paper` for `theme-color`; keep them in sync.)
 - Colour stays under 1% of the screen: the focus ring only. The front pages bring their own.
+  One exception, from the app-screen rules: on `/admin` the main data element (the bars of
+  "Periódicos más leídos") carries `--t-signal`; everything else on the dashboard stays ink.
 - Dark mode follows `prefers-color-scheme`; front pages stay printed paper, slightly dimmed.
 
 ## Type
@@ -78,6 +82,14 @@ Two faces, both self-hosted from npm (`@fontsource-variable/*`), no external req
 - `FrontPage.svelte` — the front page linking to the PDF, alt text
   `"Portada de <Masthead>, dd/mm/yyyy"`, masthead caption linking to the back issues. On a render
   failure it becomes a sheet with the masthead set in Newsreader and "Front page unavailable".
+- `AdminNav.svelte` — Resumen / Lecturas / Usuarios as underline tabs on one hairline; Usuarios
+  carries the pending count as an ink pill.
+- `ReadingTable.svelte` — the reading log rows (fecha y hora, lector, periódico, región, edición,
+  tipo); a reader or newspaper links to the log filtered by it; below `md` each row folds into
+  two lines under the reader.
+- Dashboard (`/admin`): the KPI strip is one container split by hairlines into three columns
+  (Hoy / Últimos 7 días / Últimos 30 días), figures in Newsreader, no tiles or icons; section heads
+  reuse the region head (3px ink rule, serif `h2`) with the period right-aligned in grey.
 - Buttons: one style, ink fill, 6px radius, 44-48px tall. Quiet actions are text links.
 
 ## Depth and motion
