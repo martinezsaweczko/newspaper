@@ -39,7 +39,12 @@
 				</h1>
 			</div>
 			<p class="text-[14px] text-ink-soft tabular-nums">
-				{data.region} · {countFrontPages(count)}{#if count > 1}, del {formatDate(oldest.date)} al {formatDate(
+				<a
+					class="text-ink underline underline-offset-4"
+					href={resolve(standUrl({ date: newest.date, region: data.region }))}
+					aria-label={`Portadas de ${data.region} del ${formatDate(newest.date)}`}>{data.region}</a
+				>
+				· {countFrontPages(count)}{#if count > 1}, del {formatDate(oldest.date)} al {formatDate(
 						newest.date
 					)}{/if}
 			</p>

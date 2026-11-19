@@ -9,7 +9,8 @@ export const variables = defineEnvVars({
 		schema: (value) => optional(value) ?? './newspapers'
 	},
 	DATA_DIR: {
-		description: 'Writable app data: users.json, regions.json, thumbs/. Default ./data',
+		description:
+			'Writable app data: users.json, regions.json, ignore.json, thumbs/. Default ./data',
 		schema: (value) => optional(value) ?? './data'
 	},
 	SESSION_SECRET: {
