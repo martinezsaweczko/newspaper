@@ -83,21 +83,24 @@
 				role="search"
 				aria-label="Elige un día, una región o un periódico"
 			>
-				<nav class="flex items-center gap-1" aria-label="Días">
+				<!-- Phones: the day row spans the width, arrows only (the aria-label names the day). -->
+				<nav class="flex items-center gap-1 max-sm:justify-between" aria-label="Días">
 					{#if stand.prev}
 						<a
-							class="inline-flex min-h-11 items-center gap-1 rounded-[6px] px-2 text-[14px] text-ink hover:bg-shelf"
+							class="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-[6px] px-2 text-[14px] text-ink hover:bg-shelf max-sm:text-[20px]"
 							href={resolve(standUrl({ date: stand.prev, region: stand.region, q: stand.q }))}
 							rel="prev"
 							aria-label={`Día anterior con periódicos: ${formatLongDate(stand.prev)}`}
 						>
 							<span aria-hidden="true">‹</span>
-							{formatShortDate(stand.prev)}
+							<span class="max-sm:hidden">{formatShortDate(stand.prev)}</span>
 						</a>
 					{:else}
 						<span
-							class="inline-flex min-h-11 items-center gap-1 px-2 text-[14px] text-ink-soft"
-							aria-disabled="true"><span aria-hidden="true">‹</span> Más antiguo</span
+							class="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 px-2 text-[14px] text-ink-soft max-sm:text-[20px]"
+							aria-disabled="true"
+							><span aria-hidden="true">‹</span>
+							<span class="max-sm:sr-only">Más antiguo</span></span
 						>
 					{/if}
 
@@ -105,7 +108,7 @@
 					<select
 						id="date"
 						name="date"
-						class="h-11 min-w-0 cursor-pointer rounded-[6px] border border-control bg-sheet px-3 text-base text-ink tabular-nums sm:text-[14px]"
+						class="h-11 min-w-0 cursor-pointer rounded-[6px] border border-control bg-sheet px-3 text-base text-ink tabular-nums max-sm:flex-1 sm:text-[14px]"
 						onchange={() => submitSoon()}
 					>
 						{#each stand.dates as d (d)}
@@ -115,28 +118,32 @@
 
 					{#if stand.next}
 						<a
-							class="inline-flex min-h-11 items-center gap-1 rounded-[6px] px-2 text-[14px] text-ink hover:bg-shelf"
+							class="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-[6px] px-2 text-[14px] text-ink hover:bg-shelf max-sm:text-[20px]"
 							href={resolve(standUrl({ date: stand.next, region: stand.region, q: stand.q }))}
 							rel="next"
 							aria-label={`Día siguiente con periódicos: ${formatLongDate(stand.next)}`}
 						>
-							{formatShortDate(stand.next)}
+							<span class="max-sm:hidden">{formatShortDate(stand.next)}</span>
 							<span aria-hidden="true">›</span>
 						</a>
 					{:else}
 						<span
-							class="inline-flex min-h-11 items-center gap-1 px-2 text-[14px] text-ink-soft"
-							aria-disabled="true">Más reciente <span aria-hidden="true">›</span></span
+							class="inline-flex min-h-11 min-w-11 items-center justify-center gap-1 px-2 text-[14px] text-ink-soft max-sm:text-[20px]"
+							aria-disabled="true"
+							><span class="max-sm:sr-only">Más reciente</span>
+							<span aria-hidden="true">›</span></span
 						>
 					{/if}
 				</nav>
 
-				<div class="flex items-center gap-3">
+				<!-- Phones: region and search each get the full width (side by side, at 16px, one of
+				     them would truncate "Todas las regiones" or the placeholder). -->
+				<div class="flex flex-col gap-3 sm:flex-row sm:items-center">
 					<label class="sr-only" for="region">Región</label>
 					<select
 						id="region"
 						name="region"
-						class="h-11 w-[42%] min-w-0 cursor-pointer rounded-[6px] border border-control bg-sheet px-3 text-base text-ink sm:w-auto sm:text-[14px]"
+						class="h-11 w-full min-w-0 cursor-pointer rounded-[6px] border border-control bg-sheet px-3 text-base text-ink sm:w-auto sm:text-[14px]"
 						onchange={() => submitSoon()}
 					>
 						<option value="" selected={!stand.region}>Todas las regiones</option>
@@ -155,7 +162,7 @@
 						autocomplete="off"
 						spellcheck="false"
 						maxlength="80"
-						class="h-11 w-full min-w-0 flex-1 rounded-[6px] border border-control bg-sheet px-3 text-base text-ink placeholder:text-ink-soft sm:w-[280px] sm:text-[14px]"
+						class="h-11 w-full min-w-0 rounded-[6px] border border-control bg-sheet px-3 text-base text-ink placeholder:text-ink-soft sm:w-[280px] sm:flex-1 sm:text-[14px]"
 						oninput={() => submitSoon(300)}
 					/>
 					<noscript>
