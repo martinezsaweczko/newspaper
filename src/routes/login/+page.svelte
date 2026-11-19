@@ -31,6 +31,8 @@
 
 		<div class="flex flex-col gap-2">
 			<label for="username" class="text-[14px] font-medium">Usuario</label>
+			<!-- Uncontrolled (defaultValue): a controlled value={...} was re-applied as '' when onsubmit
+			     flipped `submitting`, so the browser posted an empty username. -->
 			<input
 				id="username"
 				name="username"
@@ -39,7 +41,7 @@
 				autocapitalize="none"
 				spellcheck="false"
 				required
-				value={form?.username ?? ''}
+				defaultValue={form?.username ?? ''}
 				class="h-12 rounded-[6px] border border-control bg-sheet px-3 text-base text-ink"
 			/>
 		</div>
