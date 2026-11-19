@@ -1,6 +1,4 @@
-import { thumbnailer } from '#lib/server/library/index.ts';
-import { resolveId } from '#lib/server/library/ids.ts';
-import { config } from '#lib/server/config.ts';
+import { resolveEdition, thumbnailer } from '#lib/server/library/index.ts';
 import { parseEditionName } from '#lib/server/library/parse.ts';
 import { recordThumbnail } from '#lib/server/observability/metrics.ts';
 import { withSpan } from '#lib/server/observability/trace.ts';
@@ -9,7 +7,7 @@ import type { RequestHandler } from './$types';
 
 /** The edition's front page as JPEG (page 1, rendered once and cached on disk). */
 export const GET: RequestHandler = async ({ params, request }) => {
-	const edition = resolveId(config.newspaperDir, params.id);
+	const edition = resolveEdition(params.id);
 	if (!edition) return new Response('No encontrado', { status: 404 });
 
 	const masthead = parseEditionName(edition.rel, edition.stat.mtime).masthead;

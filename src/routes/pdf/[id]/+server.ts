@@ -1,6 +1,5 @@
 import { contentDisposition, parseRange } from '#lib/server/http/range.ts';
-import { resolveId } from '#lib/server/library/ids.ts';
-import { config } from '#lib/server/config.ts';
+import { resolveEdition } from '#lib/server/library/index.ts';
 import { addPdfBytes } from '#lib/server/observability/metrics.ts';
 import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
@@ -8,7 +7,7 @@ import type { RequestHandler } from './$types';
 
 /** Stream an edition with HTTP Range support; inline by default, `?download=1` for attachment. */
 export const GET: RequestHandler = ({ params, request, url }) => {
-	const edition = resolveId(config.newspaperDir, params.id);
+	const edition = resolveEdition(params.id);
 	if (!edition) return new Response('No encontrado', { status: 404 });
 
 	const { size, mtime, mtimeMs } = edition.stat;

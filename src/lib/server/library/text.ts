@@ -36,7 +36,11 @@ const SMALL_WORDS = new Set([
 	'and'
 ]);
 
-/** `la voz de galicia` -> `La Voz de Galicia`; all-caps tokens such as `EMV` are kept. */
+/**
+ * `la voz de galicia` -> `La Voz de Galicia`; all-caps tokens such as `EMV` are kept. The first
+ * word is always capitalised, small words elsewhere stay lower case (`el pais semanal` ->
+ * `El Pais Semanal`); accents are kept as written. Callers strip dates first.
+ */
 export function titleCase(words: string[]): string {
 	return words
 		.map((word, index) => {

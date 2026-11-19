@@ -1,5 +1,6 @@
 import { library } from '#lib/server/library/index.ts';
 import { buildNewsstand } from '#lib/server/library/newsstand.ts';
+import { isoFromLocalDate } from '#lib/format/date.ts';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ url }) => {
@@ -9,7 +10,8 @@ export const load: PageServerLoad = ({ url }) => {
 		{
 			date: url.searchParams.get('date'),
 			region: url.searchParams.get('region'),
-			q: url.searchParams.get('q')
+			q: url.searchParams.get('q'),
+			today: isoFromLocalDate(new Date())
 		},
 		regionOrder
 	);

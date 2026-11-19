@@ -84,6 +84,22 @@ describe('buildNewsstand', () => {
 		expect(legacy.shown).toBe(4);
 	});
 
+	it('opens on the newest date up to today, not on a future-dated magazine', () => {
+		const ahead = [
+			...editions,
+			ed('Hola', '2026-11-25', 'Nacional'),
+			ed('Muy', '2026-12-01', 'Nacional')
+		];
+		const stand = buildNewsstand(ahead, { today: '2026-11-19' }, order);
+		expect(stand.date).toBe('2026-11-17');
+		expect(stand.next).toBe('2026-11-25');
+		// a chosen future date is still served, and with nothing up to today the newest wins
+		expect(buildNewsstand(ahead, { today: '2026-11-19', date: '2026-12-01' }, order).date).toBe(
+			'2026-12-01'
+		);
+		expect(buildNewsstand(ahead, { today: '2020-01-01' }, order).date).toBe('2026-12-01');
+	});
+
 	it('handles an empty folder', () => {
 		const stand = buildNewsstand([], {}, order);
 		expect(stand).toMatchObject({ date: null, prev: null, next: null, groups: [], shown: 0 });

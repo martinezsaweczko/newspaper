@@ -11,6 +11,8 @@ export interface ScannedEdition {
 	slug: string;
 	date: string;
 	dateSource: 'filename' | 'mtime';
+	/** The file name carried a download-copy marker (`Hola (1).pdf`). */
+	copy: boolean;
 	size: number;
 	mtimeMs: number;
 }

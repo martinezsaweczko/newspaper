@@ -2,6 +2,9 @@ import type { Edition } from '#lib/types.ts';
 import { config } from '../config.ts';
 import { createThumbnailer } from '../thumbs.ts';
 import { createRegionStore } from './regions.ts';
+import { dedupeEditions } from './dedupe.ts';
+import { resolveId } from './ids.ts';
+import { createIgnoreStore } from './ignore.ts';
 import { setEditionCount } from '../observability/metrics.ts';
 import { withSpan } from '../observability/trace.ts';
 import { createScanner, scanFolder } from './scan.ts';
@@ -16,13 +19,18 @@ const scan = createScanner(config.newspaperDir, 5000, (root) =>
 	})
 );
 const regions = createRegionStore(config.dataDir);
+const ignored = createIgnoreStore(config.dataDir);
 
 export const thumbnailer = createThumbnailer({ cacheDir: path.join(config.dataDir, 'thumbs') });
 
-/** Every edition in the shared folder with its region, plus the region order of regions.json. */
+/**
+ * Every edition in the shared folder with its region, plus the region order of regions.json.
+ * Files on the ignore list are left out, and download copies of one edition count once.
+ */
 export function library(): { editions: Edition[]; regionOrder: string[] } {
 	const map = regions.get();
-	const editions = scan().map((e) => ({
+	const ignore = ignored.get();
+	const editions = dedupeEditions(scan().filter((e) => !ignore(e.file))).map((e) => ({
 		id: e.id,
 		masthead: e.masthead,
 		slug: e.slug,
@@ -33,4 +41,9 @@ export function library(): { editions: Edition[]; regionOrder: string[] } {
 		region: map.regionOf(e.masthead)
 	}));
 	return { editions, regionOrder: map.order };
+}
+
+/** `resolveId` in the shared folder, with ignored files treated as missing (404). */
+export function resolveEdition(id: string) {
+	return resolveId(config.newspaperDir, id, { ignore: ignored.get() });
 }

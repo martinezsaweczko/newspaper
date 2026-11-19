@@ -19,8 +19,92 @@ describe('parseEditionName', () => {
 			masthead,
 			slug,
 			date,
-			dateSource: 'filename'
+			dateSource: 'filename',
+			copy: false
 		});
+	});
+
+	// Synthetic names in the styles of the real shared folder (short dates, copies, articles).
+	it.each([
+		// DD-MM-YY at the start, `-` separator -> 20YY
+		['06-10-26-Diario de Ferrol.pdf', 'Diario de Ferrol', '2026-10-06'],
+		['14-10-26-El Mundo.pdf', 'El Mundo', '2026-10-14'],
+		['08-11-26-El Pais Semanal.pdf', 'El Pais Semanal', '2026-11-08'],
+		['25-10-26-XL Semanal.pdf', 'XL Semanal', '2026-10-25'],
+		['25-09-26-LNE Gijon.pdf', 'LNE Gijon', '2026-09-25'],
+		// DD-MM-YY at the end, other separators
+		['Diario de Ferrol 06.10.26.pdf', 'Diario de Ferrol', '2026-10-06'],
+		['diario_de_ferrol_06_10_26.pdf', 'Diario de Ferrol', '2026-10-06'],
+		['El Mundo 14 10 26.pdf', 'El Mundo', '2026-10-14'],
+		// MM-YY (monthly magazines) -> the 1st of the month
+		['10-26-Icon EP.pdf', 'Icon EP', '2026-10-01'],
+		['12-26-Muy Historia.pdf', 'Muy Historia', '2026-12-01'],
+		['Muy Historia 12-26.pdf', 'Muy Historia', '2026-12-01'],
+		// DD-MM without a year: the year of the mtime (03/11/2026)
+		['25-10-Lecturas.pdf', 'Lecturas', '2026-10-25'],
+		['Lecturas_25_10.pdf', 'Lecturas', '2026-10-25'],
+		// ... unless that lands more than ~2 months after the mtime: the previous year
+		['20-12-Lecturas.pdf', 'Lecturas', '2026-12-20'],
+		['10-01-Lecturas.pdf', 'Lecturas', '2026-01-10'],
+		['15-02-Lecturas.pdf', 'Lecturas', '2026-02-15'],
+		// the existing long formats still win over the short ones
+		['diario de sevilla 17-11-2026.pdf', 'Diario de Sevilla', '2026-11-17'],
+		['El_Correo_20261117.pdf', 'El Correo', '2026-11-17']
+	])('short date: %s', (file, masthead, date) => {
+		const parsed = parseEditionName(file, MTIME);
+		expect(parsed).toMatchObject({ masthead, date, dateSource: 'filename' });
+	});
+
+	it('rolls a year-less date back a year when it would be far in the future', () => {
+		const january = new Date(2027, 0, 5, 12); // 05/01/2027
+		expect(parseEditionName('25-11-Lecturas.pdf', january).date).toBe('2026-11-25');
+		expect(parseEditionName('20-02-Lecturas.pdf', january).date).toBe('2027-02-20');
+		expect(parseEditionName('20-04-Lecturas.pdf', january).date).toBe('2026-04-20');
+	});
+
+	it.each([
+		['Canarias7.pdf', 'Canarias7'],
+		['20 Minutos.pdf', '20 Minutos'],
+		['20-minutos.pdf', '20 Minutos'],
+		['Page 1 · Prepare.pdf', 'Page 1 Prepare'],
+		['Revista 10-99.pdf', 'Revista 10 99'], // 2099 is no plausible month-year
+		['Las 24 Horas.pdf', 'Las 24 Horas'],
+		['Diario 32-13.pdf', 'Diario 32 13'], // neither a day-month nor a month-year
+		['2 de Mayo 7.pdf', '2 de Mayo 7']
+	])('keeps masthead numbers: %s', (file, masthead) => {
+		expect(parseEditionName(file, MTIME)).toMatchObject({ masthead, dateSource: 'mtime' });
+	});
+
+	it.each([
+		['08-11-26-Diario de Leon (1).pdf', 'Diario de Leon', 'diario-de-leon', '2026-11-08'],
+		['25-11-Hola (3).pdf', 'Hola', 'hola', '2026-11-25'],
+		['25-11-Hola(2).pdf', 'Hola', 'hola', '2026-11-25'],
+		['la-voz-de-galicia-2026-11-17_1.pdf', 'La Voz de Galicia', 'la-voz-de-galicia', '2026-11-17'],
+		['el-observador-2026-11-17 (1).pdf', 'El Observador', 'el-observador', '2026-11-17']
+	])('strips a copy marker: %s', (file, masthead, slug, date) => {
+		expect(parseEditionName(file, MTIME)).toEqual({
+			masthead,
+			slug,
+			date,
+			dateSource: 'filename',
+			copy: true
+		});
+	});
+
+	it('capitalises the first word after the date, keeping small words lower elsewhere', () => {
+		expect(parseEditionName('08-11-26-el pais semanal.pdf', MTIME).masthead).toBe(
+			'El Pais Semanal'
+		);
+		expect(parseEditionName('25-10-26-El Periodico Catalunya.pdf', MTIME).masthead).toBe(
+			'El Periodico Catalunya'
+		);
+		expect(parseEditionName('2026-11-17 la voz de galicia.pdf', MTIME).masthead).toBe(
+			'La Voz de Galicia'
+		);
+		// accents stay as they are in the filename; none are invented
+		expect(parseEditionName('08-11-26-El País Semanal.pdf', MTIME).masthead).toBe(
+			'El País Semanal'
+		);
 	});
 
 	it('falls back to the modification date', () => {
@@ -28,7 +112,8 @@ describe('parseEditionName', () => {
 			masthead: 'La Razon',
 			slug: 'la-razon',
 			date: '2026-11-03',
-			dateSource: 'mtime'
+			dateSource: 'mtime',
+			copy: false
 		});
 	});
 

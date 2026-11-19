@@ -4,6 +4,9 @@ import { normalise } from './text.ts';
 
 export interface NewsstandQuery {
 	date?: string | null;
+	/** ISO date of today (server local time). Without a chosen date the stand opens on the newest
+	 * date up to today, so a magazine dated ahead (`25-11 Hola`) does not hide today's papers. */
+	today?: string | null;
 	region?: string | null;
 	q?: string | null;
 }
@@ -58,7 +61,8 @@ export function buildNewsstand(
 	regionOrder: string[]
 ): Newsstand {
 	const dates = [...new Set(editions.map((e) => e.date))].sort().reverse();
-	const date = query.date && dates.includes(query.date) ? query.date : (dates[0] ?? null);
+	const latest = (query.today && dates.find((d) => d <= query.today!)) || (dates[0] ?? null);
+	const date = query.date && dates.includes(query.date) ? query.date : latest;
 	const index = date ? dates.indexOf(date) : -1;
 
 	const ofDay = onePerMasthead(editions.filter((e) => e.date === date));

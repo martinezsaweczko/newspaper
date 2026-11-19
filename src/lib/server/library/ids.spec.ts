@@ -53,6 +53,13 @@ describe('ids', () => {
 		expect(resolveId(root, encodeId(rel))).toBeNull();
 	});
 
+	it('rejects a file on the ignore list', () => {
+		const id = encodeId('la-voz-de-galicia-2026-11-17.pdf');
+		const ignore = (file: string) => file.startsWith('la-voz');
+		expect(resolveId(root, id, { ignore })).toBeNull();
+		expect(resolveId(root, encodeId('alias.pdf'), { ignore })?.rel).toBe('alias.pdf');
+	});
+
 	it('rejects malformed ids', () => {
 		expect(resolveId(root, '')).toBeNull();
 		expect(resolveId(root, 'not base64!')).toBeNull();

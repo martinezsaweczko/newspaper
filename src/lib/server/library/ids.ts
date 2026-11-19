@@ -19,15 +19,26 @@ export interface ResolvedEdition {
 	stat: Stats;
 }
 
+export interface ResolveOptions {
+	/** Files on the ignore list (`DATA_DIR/ignore.json`) resolve to null as if missing. */
+	ignore?: (file: string) => boolean;
+}
+
 /**
  * Turn an id into a file inside `root`, or null. Rejects traversal, absolute paths, anything that
- * is not a flat `*.pdf` file name, hidden files, symlinks that leave the root, and missing files.
+ * is not a flat `*.pdf` file name, hidden files, ignored files, symlinks that leave the root, and
+ * missing files.
  */
-export function resolveId(root: string, id: string): ResolvedEdition | null {
+export function resolveId(
+	root: string,
+	id: string,
+	options: ResolveOptions = {}
+): ResolvedEdition | null {
 	const rel = decodeId(id);
 	if (rel === null) return null;
 	if (rel.includes('/') || rel.includes('\\') || rel.includes('\0')) return null;
 	if (rel.startsWith('.') || !/\.pdf$/i.test(rel) || path.isAbsolute(rel)) return null;
+	if (options.ignore?.(rel)) return null;
 
 	const abs = path.join(root, rel);
 	try {

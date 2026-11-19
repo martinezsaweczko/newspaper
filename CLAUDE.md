@@ -39,7 +39,15 @@ See README.md for the product overview, configuration and deploy.
 - **Shared folder** (`NEWSPAPER_DIR`, dev default `./newspapers`): one flat folder, all PDFs together.
   Read-only for the app. Hidden files are ignored.
 - **Edition** = one PDF. Parsed from the filename: masthead (the newspaper) + optional date
-  (`YYYY-MM-DD`, `YYYYMMDD`, `DD-MM-YYYY`; falls back to file mtime).
+  (`YYYY-MM-DD`, `YYYYMMDD`, `DD-MM-YYYY` anywhere; `DD-MM-YY`, `DD-MM`, `MM-YY` only at the start
+  or end, never next to another number; falls back to file mtime). Year-less `DD-MM` takes the
+  mtime's year, or the previous one if that lands >62 days after the mtime. A trailing copy marker
+  (` (1)`, `_1`) is stripped; one edition per slug+date (`dedupe.ts`: larger file, then original,
+  then newest). The stand opens on the newest date up to today.
+- **Ignore list**: `ignore.json` in `DATA_DIR` (created empty from `src/lib/server/ignore.default.json`,
+  `{ "patterns": [] }`, reloaded on mtime change) hides non-newspaper PDFs; whole-word, case- and
+  accent-insensitive match on the normalised filename. Ignored files are out of the stand, back
+  issues and counts, and `resolveId` (`ignore` option, via `resolveEdition`) 404s them.
 - **Region is logical, not a folder**: `regions.json` (in `DATA_DIR`, seeded from
   `src/lib/server/regions.default.json`) maps each region to masthead patterns, matched case- and
   accent-insensitively against the normalised filename. Unmatched mastheads are **Nacional** (`NATIONAL` in `regions.ts`; old `?region=National` links just show all).

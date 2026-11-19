@@ -7,7 +7,8 @@ one day at a time. Click a front page to read the PDF.
 - **One flat folder.** All PDFs live together; the app only reads them.
 - **Regions are logical.** A small `regions.json` maps mastheads to regions; anything unmatched is
   **Nacional**. Re-filing a paper means editing the mapping, never moving files.
-- **A day at a time.** The stand opens on the most recent day that has papers, with previous/next
+- **A day at a time.** The stand opens on the most recent day up to today that has papers (an
+  issue dated ahead, like a weekly magazine, is one "next day" away), with previous/next
   day, a list of every available day, a region filter and a search. Every masthead also has a
   back-issues page.
 - **Fast front pages.** Page 1 is rendered once with `pdftoppm` and cached on disk.
@@ -38,10 +39,29 @@ interchangeable and the masthead is title-cased for display.
 | `El_Correo_20261117.pdf`           | El Correo         | 17/11/2026                   |
 | `diario de sevilla 17-11-2026.pdf` | Diario de Sevilla | 17/11/2026                   |
 | `heraldo_de_aragon_17_11_2026.pdf` | Heraldo de Aragon | 17/11/2026                   |
+| `06-10-26-Diario de Ferrol.pdf`    | Diario de Ferrol  | 06/10/2026                   |
+| `08-11-26-El Pais Semanal.pdf`     | El Pais Semanal   | 08/11/2026                   |
+| `25-11 Hola (1).pdf`               | Hola              | 25/11 of the mtime's year    |
+| `10-26-Icon EP.pdf`                | Icon EP           | 01/10/2026 (a monthly)       |
 | `la-razon.pdf`                     | La Razon          | the file's modification date |
 
-Accepted dates: `YYYY-MM-DD`, `YYYYMMDD`, `DD-MM-YYYY`, `DD_MM_YYYY`. Hidden files and anything
-that is not a `.pdf` are ignored. If two files give the same masthead and day, the newest file wins.
+Accepted dates: `YYYY-MM-DD`, `YYYYMMDD`, `DD-MM-YYYY` anywhere in the name, and the short forms
+`DD-MM-YY` (20YY), `DD-MM` and `MM-YY` (monthlies, dated the 1st) at the start or the end of the
+name, with `-`, `_`, `.` or a space between the numbers. A short form never touches a masthead
+number such as `Canarias7`, `20 Minutos` or `Las 24 Horas`.
+
+- **`DD-MM` without a year** takes the year of the file's modification time, or the year before
+  when that would put the edition more than 62 days after the file was written (a `25-11` issue
+  saved in January is last November's).
+- **Two numbers** are read as `DD-MM` when the second can be a month (`25-11`), otherwise as
+  `MM-YY` when 20YY is within five years of the file's (`10-26`).
+- The first word of the masthead is always capitalised, small words (`de`, `la`, `el`…) stay lower
+  case elsewhere, and accents are kept exactly as written.
+- **Copies.** A trailing copy marker (` (1)`, `(2)`, `_1`) is dropped from the masthead. Files that
+  give the same masthead and day are one edition and only one is listed: the **larger** file (a
+  truncated download loses), then the original without a marker, then the most recently modified.
+
+Hidden files and anything that is not a `.pdf` are skipped, and so is anything on the ignore list.
 
 ## Regions (`regions.json`)
 
@@ -67,12 +87,27 @@ logged and the last good mapping stays in use.
   the order of the file.
 - Avoid short, ambiguous patterns (a common word like `hoy` would catch unrelated titles).
 
+## Ignore list (`ignore.json`)
+
+PDFs that are not newspapers (a CV, meeting minutes, a manual) can share the folder. On first start
+the app creates an empty `DATA_DIR/ignore.json` and, like `regions.json`, picks up edits on the next
+request; a broken edit is logged and the last good list stays in use.
+
+```json
+{ "patterns": ["curriculum", "cv", "acta de reunion"] }
+```
+
+- Patterns match **whole words** of the file name (without `.pdf`), ignoring case and accents:
+  `cv` hides `CV_David.pdf` but not `Cvitae.pdf`; `acta de reunion` hides `Acta de reunión.pdf`.
+- Ignored files are left out of the stand, the back issues and every count, and their `/pdf` and
+  `/thumb` links answer 404. The files themselves are never touched.
+
 ## Configuration
 
 | Variable                            | Default        | Meaning                                                                                                               |
 | ----------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `NEWSPAPER_DIR`                     | `./newspapers` | The shared flat folder of PDFs (read-only)                                                                            |
-| `DATA_DIR`                          | `./data`       | `users.json`, `regions.json`, `thumbs/` (front-page cache)                                                            |
+| `DATA_DIR`                          | `./data`       | `users.json`, `regions.json`, `ignore.json`, `thumbs/` (front-page cache)                                             |
 | `SESSION_SECRET`                    | —              | Cookie signing key, **required in production** (32+ characters). Development falls back to a fixed key with a warning |
 | `COOKIE_SECURE`                     | `false`        | `true` when served over https                                                                                         |
 | `PORT`, `HOST`, `ADDRESS_HEADER`, … |                | [adapter-node options](https://svelte.dev/docs/kit/adapter-node)                                                      |

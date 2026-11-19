@@ -3,6 +3,7 @@ import { users } from '#lib/server/auth/index.ts';
 import { isCrossSiteForm } from '#lib/server/auth/origin.ts';
 import { SESSION_COOKIE, sessionUser } from '#lib/server/auth/session.ts';
 import { config, DEV_USER, sessionSecret } from '#lib/server/config.ts';
+import { seedIgnoreFile } from '#lib/server/library/ignore.ts';
 import { seedRegionsFile } from '#lib/server/library/regions.ts';
 import { initMetrics, recordHttpRequest } from '#lib/server/observability/metrics.ts';
 import type { Handle, ServerInit } from '@sveltejs/kit/hooks';
@@ -13,6 +14,7 @@ export const init: ServerInit = () => {
 	sessionSecret(); // fail fast in production without a secret
 	mkdirSync(config.dataDir, { recursive: true });
 	seedRegionsFile(config.dataDir);
+	seedIgnoreFile(config.dataDir);
 	initMetrics();
 };
 
