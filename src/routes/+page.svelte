@@ -8,6 +8,7 @@
 		formatShortDate,
 		formatWeekdayDate
 	} from '#lib/format/date.ts';
+	import { countFrontPages, standSummary } from '#lib/format/count.ts';
 	import { standUrl } from '#lib/stand-url.ts';
 	import { resolve } from '$app/paths';
 	import type { PageProps } from './$types';
@@ -23,8 +24,16 @@
 		timer = setTimeout(() => form?.requestSubmit(), delay);
 	}
 
-	const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 	const filtered = $derived(Boolean(stand.region || stand.q));
+	const summary = $derived(
+		standSummary({
+			shown: stand.shown,
+			onDate: stand.onDate,
+			regions: stand.regions.length,
+			region: stand.region,
+			q: stand.q
+		})
+	);
 	// eager-load roughly the first screen of front pages
 	const eagerIds = $derived(
 		new Set(
@@ -64,11 +73,10 @@
 					{formatDateline(stand.date)}
 				</h1>
 				<p class="text-[14px] text-ink-soft tabular-nums">
-					{plural(stand.onDate, 'portada', 'portadas')} de {plural(
-						stand.regions.length,
-						'región',
-						'regiones'
-					)}
+					{summary}{#if filtered}&nbsp;· <a
+							class="text-ink underline underline-offset-4"
+							href={resolve(standUrl({ date: stand.date }))}>Ver todas</a
+						>{/if}
 				</p>
 			</div>
 
@@ -176,7 +184,7 @@
 			</form>
 
 			<p class="sr-only" aria-live="polite">
-				Mostrando {plural(stand.shown, 'periódico', 'periódicos')}
+				Mostrando {summary}
 			</p>
 
 			{#if stand.groups.length === 0}
@@ -188,7 +196,7 @@
 						Nada {stand.q ? `llamado «${stand.q}»` : ''}
 						{stand.region ? `de ${stand.region}` : ''} el {formatLongDate(stand.date)}.
 						<a class="underline underline-offset-4" href={resolve(standUrl({ date: stand.date }))}
-							>Ver todos los periódicos del día</a
+							>Ver todas las portadas del día</a
 						>
 					</p>
 				</section>
@@ -211,7 +219,7 @@
 								{group.region}
 							</h2>
 							<span class="text-[14px] text-ink-soft tabular-nums">
-								{plural(group.editions.length, 'periódico', 'periódicos')}
+								{countFrontPages(group.editions.length)}
 							</span>
 						</div>
 						<ul class="col-span-full mt-5 grid grid-cols-subgrid gap-y-8 sm:gap-y-10">
@@ -224,16 +232,6 @@
 					</section>
 				{/each}
 			</div>
-
-			{#if filtered && stand.groups.length > 0}
-				<p class="mt-10 text-[14px] text-ink-soft">
-					Mostrando {plural(stand.shown, 'periódico', 'periódicos')} de {stand.onDate}.
-					<a
-						class="text-ink underline underline-offset-4"
-						href={resolve(standUrl({ date: stand.date }))}>Ver todos</a
-					>
-				</p>
-			{/if}
 		{/if}
 	</main>
 </div>

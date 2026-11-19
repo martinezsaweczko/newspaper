@@ -3,6 +3,7 @@
 	import { SHELF_GRID } from '#lib/components/shelf.ts';
 	import SiteHeader from '#lib/components/SiteHeader.svelte';
 	import { formatDate, formatDateline } from '#lib/format/date.ts';
+	import { countFrontPages } from '#lib/format/count.ts';
 	import { standUrl } from '#lib/stand-url.ts';
 	import { resolve } from '$app/paths';
 	import type { PageProps } from './$types';
@@ -38,8 +39,7 @@
 				</h1>
 			</div>
 			<p class="text-[14px] text-ink-soft tabular-nums">
-				{data.region} · {count}
-				{count === 1 ? 'edición' : 'ediciones'}{#if count > 1}, del {formatDate(oldest.date)} al {formatDate(
+				{data.region} · {countFrontPages(count)}{#if count > 1}, del {formatDate(oldest.date)} al {formatDate(
 						newest.date
 					)}{/if}
 			</p>

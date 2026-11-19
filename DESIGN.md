@@ -87,3 +87,7 @@ Two faces, both self-hosted from npm (`@fontsource-variable/*`), no external req
 - Every control has a label (visually hidden where the form is self-evident), touch targets are
   44px, the result count is announced in a polite live region, errors are tied to the form.
 - Dates are written through `src/lib/format/date.ts` only.
+- Counts are written through `src/lib/format/count.ts`: an edition is always a **portada** in a
+  count (stand header, region heads, back issues; "periódico" names the masthead). Filtered, the
+  header counts the visible set against the day (`3 de 35 portadas · Catalunya · «voz»`) with the
+  "Ver todas" reset link beside it.
