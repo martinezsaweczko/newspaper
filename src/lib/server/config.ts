@@ -2,6 +2,7 @@ import {
 	AUTH_DISABLED,
 	COOKIE_SECURE,
 	DATA_DIR,
+	DATABASE_URL,
 	NEWSPAPER_DIR,
 	SESSION_SECRET
 } from '$app/env/private';
@@ -14,7 +15,8 @@ export const config = {
 	dataDir: path.resolve(DATA_DIR),
 	cookieSecure: COOKIE_SECURE,
 	/** Testing only: skip the login. Honoured by the dev server only, never by `node build`. */
-	authDisabled: dev && AUTH_DISABLED
+	authDisabled: dev && AUTH_DISABLED,
+	databaseUrl: DATABASE_URL
 };
 
 /** The user every request runs as while `authDisabled` is on. */

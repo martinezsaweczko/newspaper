@@ -1,11 +1,39 @@
 # podman compose up -d   (or docker compose up -d)
 # Configure in .env (see .env.example). Add users with:
 #   podman compose exec newspaper npm run user:add -- <name>
+#
+# Development (`npm run dev` on the host) needs only the database: `podman compose up -d db`
+# (or `npm run db:up`). It listens on 127.0.0.1:3307 so it never clashes with another MySQL on 3306.
 services:
+  db:
+    image: docker.io/library/mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-newspaper-root}
+      MYSQL_DATABASE: newspaper
+      MYSQL_USER: newspaper
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-newspaper}
+    ports:
+      # Loopback only: for `npm run dev`, the tests and a local mysql client. The app container
+      # reaches the database over the compose network (db:3306) and does not need this line; on a
+      # production host that runs nothing on the host side you may delete it.
+      - '127.0.0.1:${DB_HOST_PORT:-3307}:3306'
+    volumes:
+      - newspaper-db:/var/lib/mysql
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
   newspaper:
     build: .
     image: ${NEWSPAPER_IMAGE:-localhost/newspaper:latest}
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - '${NEWSPAPER_PORT:-3000}:3000'
       # Prometheus /metrics. Loopback only by default. For a Prometheus on another LAN host set
@@ -14,8 +42,12 @@ services:
       # and scrape newspaper:9464 directly.
       - '${METRICS_BIND:-127.0.0.1}:${METRICS_HOST_PORT:-9464}:9464'
     environment:
-      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env (32+ random characters)}
+      # required (32+ random characters): the app refuses to start without it. Not a `:?` check
+      # here, so `podman compose up -d db` works with a dev .env that has no secret.
+      SESSION_SECRET: ${SESSION_SECRET:-}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      # the compose network address of the db service, never the host's 127.0.0.1:3307
+      DATABASE_URL: mysql://newspaper:${MYSQL_PASSWORD:-newspaper}@db:3306/newspaper
       # source addresses allowed to scrape /metrics (comma-separated CIDRs; default = private ranges)
       METRICS_ALLOW: ${METRICS_ALLOW:-}
       # traces: set an OTLP/HTTP endpoint (e.g. http://jaeger:4318) to export; unset = no traces
@@ -36,3 +68,4 @@ services:
 
 volumes:
   newspaper-data:
+  newspaper-db:

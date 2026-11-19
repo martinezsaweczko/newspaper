@@ -3,19 +3,28 @@ import { users } from '#lib/server/auth/index.ts';
 import { isCrossSiteForm } from '#lib/server/auth/origin.ts';
 import { SESSION_COOKIE, sessionUser } from '#lib/server/auth/session.ts';
 import { config, DEV_USER, sessionSecret } from '#lib/server/config.ts';
+import { closeDbHandle, getDbHandle } from '#lib/server/db/index.ts';
+import { redactUrl, runMigrations, waitForDb } from '#lib/server/db/migrate.ts';
 import { seedIgnoreFile } from '#lib/server/library/ignore.ts';
 import { seedRegionsFile } from '#lib/server/library/regions.ts';
 import { initMetrics, recordHttpRequest } from '#lib/server/observability/metrics.ts';
 import type { Handle, ServerInit } from '@sveltejs/kit/hooks';
 import { mkdirSync } from 'node:fs';
 
-export const init: ServerInit = () => {
-	if (building) return;
+export const init: ServerInit = async () => {
+	if (building) return; // never touch the database during `vite build`
 	sessionSecret(); // fail fast in production without a secret
 	mkdirSync(config.dataDir, { recursive: true });
 	seedRegionsFile(config.dataDir);
 	seedIgnoreFile(config.dataDir);
 	initMetrics();
+	// wait for MySQL (container start order), then apply pending migrations from /drizzle
+	await waitForDb(config.databaseUrl);
+	await runMigrations(getDbHandle(config.databaseUrl).db);
+	console.log(`[db] migrations applied on ${redactUrl(config.databaseUrl)}`);
+	// adapter-node emits this after the HTTP server has closed; the pool's sockets would otherwise
+	// keep the process alive until the container runtime kills it
+	process.once('sveltekit:shutdown' as 'beforeExit', () => void closeDbHandle());
 };
 
 /** Routes reachable without a session. Static files are served by adapter-node before this hook. */

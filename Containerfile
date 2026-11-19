@@ -6,7 +6,9 @@ WORKDIR /app
 COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 COPY . .
-RUN npm run build \
+# Kit validates env at build time and DATABASE_URL is required: this placeholder satisfies the
+# check only. It is read at runtime (src/env.ts), never baked into the output.
+RUN DATABASE_URL=mysql://build:build@127.0.0.1:3306/build npm run build \
 	&& npm prune --omit=dev
 
 FROM docker.io/library/node:24-slim
@@ -27,6 +29,8 @@ ENV NODE_ENV=production \
 # The server bundle keeps its `dependencies` (OpenTelemetry) external: ship the pruned
 # production node_modules. The user CLI needs only the two files after it.
 COPY --from=build /app/build ./build
+# migrations, applied by the server at start (hooks.server.ts init)
+COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/scripts/user.ts ./scripts/user.ts
@@ -38,7 +42,8 @@ VOLUME ["/data"]
 # publish it on a public interface or behind the reverse proxy).
 EXPOSE 3000 9464
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+# start period: waiting for MySQL and applying migrations on a fresh volume
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
 	CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", "build"]

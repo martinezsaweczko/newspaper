@@ -25,5 +25,14 @@ export const variables = defineEnvVars({
 		description:
 			'Testing only: "true" skips the login under `npm run dev`. Ignored by production builds.',
 		schema: (value) => /^(1|true|yes|on)$/i.test(value ?? '')
+	},
+	DATABASE_URL: {
+		description:
+			'MySQL connection URL, e.g. mysql://newspaper:newspaper@127.0.0.1:3307/newspaper. Required.',
+		schema: (value) => {
+			const url = optional(value);
+			if (!url) throw new Error('DATABASE_URL is required (mysql://user:pass@host:port/db).');
+			return url;
+		}
 	}
 });
