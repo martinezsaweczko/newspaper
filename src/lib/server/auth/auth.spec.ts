@@ -1,16 +1,18 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { createHmac } from 'node:crypto';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { sanitizeNext } from './next.ts';
 import { isCrossSiteForm } from './origin.ts';
-import { signSession, verifySession } from './session.ts';
+import { sessionUser, signSession, verifySession } from './session.ts';
 import { createLoginThrottle, createThrottle, throttleKey, throttleMessage } from './throttle.ts';
 import {
 	addUser,
 	authenticate,
 	createUserDirectory,
 	hashPassword,
+	logoutAll,
 	normaliseUsername,
 	readUsers,
 	removeUser,
@@ -70,7 +72,12 @@ describe('session tokens', () => {
 
 	it('signs and verifies', () => {
 		const token = signSession('ana', secret, now);
-		expect(verifySession(token, secret, now)).toEqual({ user: 'ana', exp: now / 1000 + 7 * 86400 });
+		expect(verifySession(token, secret, now)).toEqual({
+			user: 'ana',
+			exp: now / 1000 + 7 * 86400,
+			v: 1
+		});
+		expect(verifySession(signSession('ana', secret, now, 60, 3), secret, now)?.v).toBe(3);
 	});
 
 	it('rejects tampering, a wrong secret and garbage', () => {
@@ -89,6 +96,69 @@ describe('session tokens', () => {
 		const token = signSession('ana', secret, now, 60);
 		expect(verifySession(token, secret, now + 59_000)).not.toBeNull();
 		expect(verifySession(token, secret, now + 60_000)).toBeNull();
+	});
+});
+
+describe('session revocation', () => {
+	const secret = 'test-secret-that-is-long-enough-123456';
+	const dir = mkdtempSync(path.join(tmpdir(), 'np-sessions-'));
+	afterAll(() => rmSync(dir, { recursive: true, force: true }));
+	const users = createUserDirectory(dir);
+	const issue = (name: string) => signSession(name, secret, Date.now(), 60, users.version(name)!);
+	/** A token as signed before session versions existed: no `v` in the payload. */
+	const legacy = (name: string) => {
+		const payload = Buffer.from(
+			JSON.stringify({ u: name, exp: Math.floor(Date.now() / 1000) + 60 })
+		).toString('base64url');
+		return `${payload}.${createHmac('sha256', secret).update(payload).digest('base64url')}`;
+	};
+
+	it('accepts a fresh token and rejects it after a password change', async () => {
+		await addUser(dir, 'ana', 'secret-pass');
+		expect(users.version('ana')).toBe(1);
+		const token = issue('ana');
+		expect(sessionUser(token, secret, users)).toBe('ana');
+
+		await addUser(dir, 'ana', 'another-pass');
+		expect(readUsers(dir).users.ana.sessionVersion).toBe(2);
+		expect(sessionUser(token, secret, users)).toBeNull();
+		expect(sessionUser(issue('ana'), secret, users)).toBe('ana');
+	});
+
+	it('rejects every session after logout-all', async () => {
+		await addUser(dir, 'bob', 'secret-pass');
+		const token = issue('bob');
+		expect(logoutAll(dir, 'BOB')).toBe(2);
+		expect(sessionUser(token, secret, users)).toBeNull();
+		expect(logoutAll(dir, 'nobody')).toBeNull();
+	});
+
+	it('accepts a legacy token without v only while the version is 1', async () => {
+		await addUser(dir, 'carla', 'secret-pass');
+		const token = legacy('carla');
+		expect(sessionUser(token, secret, users)).toBe('carla');
+		logoutAll(dir, 'carla');
+		expect(sessionUser(token, secret, users)).toBeNull();
+	});
+
+	it('treats users.json entries without sessionVersion as version 1', async () => {
+		const old = mkdtempSync(path.join(tmpdir(), 'np-sessions-old-'));
+		const hash = await hashPassword('secret-pass');
+		writeFileSync(
+			path.join(old, 'users.json'),
+			JSON.stringify({ users: { dani: { hash, created: '2026-11-01T00:00:00.000Z' } } })
+		);
+		const oldUsers = createUserDirectory(old);
+		expect(oldUsers.version('dani')).toBe(1);
+		expect(sessionUser(legacy('dani'), secret, oldUsers)).toBe('dani');
+		expect(logoutAll(old, 'dani')).toBe(2);
+		expect(sessionUser(legacy('dani'), secret, oldUsers)).toBeNull();
+		rmSync(old, { recursive: true, force: true });
+	});
+
+	it('rejects unknown users and missing tokens', () => {
+		expect(sessionUser(legacy('nobody'), secret, users)).toBeNull();
+		expect(sessionUser(undefined, secret, users)).toBeNull();
 	});
 });
 

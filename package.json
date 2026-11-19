@@ -20,6 +20,7 @@
 		"test": "npm run test:unit -- --run",
 		"user:add": "node scripts/user.ts add",
 		"user:remove": "node scripts/user.ts remove",
+		"user:logout-all": "node scripts/user.ts logout-all",
 		"samples": "node scripts/make-samples.mjs"
 	},
 	"devDependencies": {

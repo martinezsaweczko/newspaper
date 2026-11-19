@@ -1,5 +1,5 @@
 import { isoFromLocalDate } from '#lib/format/date.ts';
-import { loginThrottle } from '#lib/server/auth/index.ts';
+import { loginThrottle, users } from '#lib/server/auth/index.ts';
 import { throttleMessage } from '#lib/server/auth/throttle.ts';
 import { sanitizeNext } from '#lib/server/auth/next.ts';
 import { SESSION_COOKIE, SESSION_TTL_SECONDS, signSession } from '#lib/server/auth/session.ts';
@@ -42,7 +42,14 @@ export const actions: Actions = {
 
 		loginThrottle.succeed(address, user);
 		recordLogin('success');
-		cookies.set(SESSION_COOKIE, signSession(user, sessionSecret()), {
+		const token = signSession(
+			user,
+			sessionSecret(),
+			Date.now(),
+			SESSION_TTL_SECONDS,
+			users.version(user) ?? 1
+		);
+		cookies.set(SESSION_COOKIE, token, {
 			path: '/',
 			httpOnly: true,
 			sameSite: 'lax',

@@ -14,7 +14,7 @@ See README.md for the product overview, configuration and deploy.
 - `npm run lint` / `npm run format` — prettier + eslint
 - `npm run test:unit -- --run` — vitest
 - `npm run build` — production build to `build/` (`node build`)
-- `npm run user:add -- <name>` / `npm run user:remove -- <name>` — manage logins
+- `npm run user:add -- <name>` / `npm run user:remove -- <name>` / `npm run user:logout-all -- <name>` — manage logins
 - `node scripts/make-samples.mjs` — generate synthetic sample editions into `newspapers/`
 - `podman build -t newspaper .` (or docker) — container image; `podman compose up -d` — run it
 
@@ -51,8 +51,12 @@ See README.md for the product overview, configuration and deploy.
 
 - Auth: `DATA_DIR/users.json` with scrypt hashes (node:crypto, no auth deps), HMAC-signed session
   cookie (`SESSION_SECRET`, httpOnly, sameSite=lax, `COOKIE_SECURE` off by default for plain-http LAN).
-  `hooks.server.ts` guards every route except `/login` and static assets; `next` redirects are
-  sanitised to same-site relative paths. In-memory login throttle.
+  Tokens carry the user's `sessionVersion` (`v`; absent = 1 for pre-version tokens); a password
+  change or `user:logout-all` bumps it, revoking every session. `hooks.server.ts` checks it via the
+  cached `createUserDirectory` (stat per request, re-read on change) and guards every route except
+  `/login` and static assets; `next` redirects are sanitised to same-site relative paths, checked
+  after dot-segment normalisation. In-memory login throttle (`createLoginThrottle`): per IP+user 5,
+  per user 10, per IP 50 failures / 15 min, swept and capped.
 - Front pages: `/thumb/[id]` renders page 1 with `pdftoppm` (poppler-utils, `execFile`, timeout),
   cached in `DATA_DIR/thumbs/` keyed by path+mtime+size, in-flight dedupe, small concurrency cap.
 - PDFs: `/pdf/[id]` streams with HTTP Range (206) and inline disposition; `?download=1` for attachment.

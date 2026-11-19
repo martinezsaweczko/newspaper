@@ -1,7 +1,7 @@
 import { building } from '$app/env';
 import { users } from '#lib/server/auth/index.ts';
 import { isCrossSiteForm } from '#lib/server/auth/origin.ts';
-import { SESSION_COOKIE, verifySession } from '#lib/server/auth/session.ts';
+import { SESSION_COOKIE, sessionUser } from '#lib/server/auth/session.ts';
 import { config, DEV_USER, sessionSecret } from '#lib/server/config.ts';
 import { seedRegionsFile } from '#lib/server/library/regions.ts';
 import { initMetrics, recordHttpRequest } from '#lib/server/observability/metrics.ts';
@@ -42,8 +42,9 @@ const guarded: Handle = async ({ event, resolve }) => {
 		});
 	}
 
-	const session = verifySession(event.cookies.get(SESSION_COOKIE), sessionSecret());
-	event.locals.user = session && users.has(session.user) ? session.user : null;
+	// rejects removed users and tokens older than the user's sessionVersion (password change,
+	// `npm run user:logout-all`); users.json is re-read only when it changes
+	event.locals.user = sessionUser(event.cookies.get(SESSION_COOKIE), sessionSecret(), users);
 	if (!event.locals.user && config.authDisabled) event.locals.user = DEV_USER;
 	if (event.locals.user) event.tracing.root.setAttribute('newspaper.user', event.locals.user);
 

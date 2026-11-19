@@ -3,17 +3,25 @@
  *
  *   npm run user:add -- <name> [--password <pw>]   (prompts without echo when --password is absent)
  *   npm run user:remove -- <name>
+ *   npm run user:logout-all -- <name>             (signs the user out of every session)
  *
  * Runs on Node 24 with native TypeScript type stripping; reads DATA_DIR (default ./data).
  */
 import path from 'node:path';
-import { addUser, MIN_PASSWORD_LENGTH, removeUser } from '../src/lib/server/auth/users.ts';
+import {
+	addUser,
+	logoutAll,
+	MIN_PASSWORD_LENGTH,
+	removeUser
+} from '../src/lib/server/auth/users.ts';
 
 const [command, ...rest] = process.argv.slice(2);
 const dataDir = path.resolve(process.env.DATA_DIR || './data');
 
 function usage(code = 1): never {
-	console.error('Usage: user add <name> [--password <pw>] | user remove <name>');
+	console.error(
+		'Usage: user add <name> [--password <pw>] | user remove <name> | user logout-all <name>'
+	);
 	process.exit(code);
 }
 
@@ -84,11 +92,17 @@ async function main() {
 		console.log(
 			`${result === 'created' ? 'Created' : 'Updated the password of'} ${name.toLowerCase()} in ${path.join(dataDir, 'users.json')}`
 		);
+		if (result === 'updated') console.log('Existing sessions of this user were signed out.');
 	} else if (command === 'remove') {
 		const [name] = rest;
 		if (!name) usage();
 		if (!removeUser(dataDir, name)) throw new Error(`No user called ${name}.`);
 		console.log(`Removed ${name.toLowerCase()}.`);
+	} else if (command === 'logout-all') {
+		const [name] = rest;
+		if (!name) usage();
+		if (logoutAll(dataDir, name) === null) throw new Error(`No user called ${name}.`);
+		console.log(`Signed ${name.toLowerCase()} out of every session.`);
 	} else {
 		usage(command ? 1 : 0);
 	}

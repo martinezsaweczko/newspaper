@@ -51,6 +51,14 @@ export async function verifyPassword(password: string, stored: string): Promise<
 export interface UserRecord {
 	hash: string;
 	created: string;
+	/** Signed into every session token; bumping it signs the user out everywhere. Absent = 1. */
+	sessionVersion?: number;
+}
+
+/** A record's session version: a positive integer, 1 when missing or malformed. */
+export function sessionVersionOf(record: UserRecord): number {
+	const v = record.sessionVersion;
+	return typeof v === 'number' && Number.isSafeInteger(v) && v >= 1 ? v : 1;
 }
 
 export interface UsersFile {
@@ -84,7 +92,10 @@ function writeUsers(dataDir: string, file: UsersFile): void {
 	renameSync(tmp, target);
 }
 
-/** Create a user or change their password. Returns 'created' or 'updated'. */
+/**
+ * Create a user or change their password. Returns 'created' or 'updated'.
+ * Changing a password bumps `sessionVersion`, which revokes the user's existing sessions.
+ */
 export async function addUser(
 	dataDir: string,
 	name: string,
@@ -96,13 +107,26 @@ export async function addUser(
 		throw new Error(`Passwords need at least ${MIN_PASSWORD_LENGTH} characters.`);
 	}
 	const file = readUsers(dataDir);
-	const existed = user in file.users;
+	const previous = file.users[user];
+	const existed = previous !== undefined;
 	file.users[user] = {
 		hash: await hashPassword(password),
-		created: file.users[user]?.created ?? new Date().toISOString()
+		created: previous?.created ?? new Date().toISOString(),
+		sessionVersion: previous ? sessionVersionOf(previous) + 1 : 1
 	};
 	writeUsers(dataDir, file);
 	return existed ? 'updated' : 'created';
+}
+
+/** Sign a user out everywhere: bump their `sessionVersion`. Returns the new version, or null. */
+export function logoutAll(dataDir: string, name: string): number | null {
+	const user = normaliseUsername(name);
+	const file = readUsers(dataDir);
+	const record = user ? file.users[user] : undefined;
+	if (!user || !record) return null;
+	record.sessionVersion = sessionVersionOf(record) + 1;
+	writeUsers(dataDir, file);
+	return record.sessionVersion;
 }
 
 export function removeUser(dataDir: string, name: string): boolean {
@@ -133,23 +157,40 @@ export async function authenticate(
 	return (await verifyPassword(password, record.hash)) ? user : null;
 }
 
-/** Cached existence check for the request hook: re-reads users.json when its mtime changes. */
+/**
+ * Cached lookup for the request hook: re-reads users.json only when its inode, mtime or size
+ * changes, so checking a session costs a stat, not a read and parse. File timestamps come from a
+ * coarse clock, so a file modified less than a second ago is not trusted to be cached: a quick
+ * second write (e.g. logout-all right after a login) could keep the same stamp.
+ */
 export function createUserDirectory(dataDir: string) {
-	let mtime = -1;
-	let names = new Set<string>();
+	let stamp = '';
+	let versions = new Map<string, number>();
+	const refresh = () => {
+		let current = 'missing';
+		let settled = true;
+		try {
+			const stat = statSync(usersFilePath(dataDir));
+			current = `${stat.ino}:${stat.mtimeMs}:${stat.size}`;
+			settled = Date.now() - stat.mtimeMs >= 1000;
+		} catch {
+			// no users file yet
+		}
+		if (current !== stamp || !settled) {
+			stamp = current;
+			const { users } = readUsers(dataDir);
+			versions = new Map(Object.entries(users).map(([n, r]) => [n, sessionVersionOf(r)]));
+		}
+	};
 	return {
 		has(name: string): boolean {
-			let current = -2;
-			try {
-				current = statSync(usersFilePath(dataDir)).mtimeMs;
-			} catch {
-				// no users file yet
-			}
-			if (current !== mtime) {
-				mtime = current;
-				names = new Set(Object.keys(readUsers(dataDir).users));
-			}
-			return names.has(name);
+			refresh();
+			return versions.has(name);
+		},
+		/** The user's current session version, or null when there is no such user. */
+		version(name: string): number | null {
+			refresh();
+			return versions.get(name) ?? null;
 		}
 	};
 }

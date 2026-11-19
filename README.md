@@ -87,9 +87,13 @@ Users live in `DATA_DIR/users.json` (scrypt hashes). There is no sign-up page.
 npm run user:add -- ana                     # create, or change ana's password (prompted)
 npm run user:add -- ana --password '…'      # non-interactive
 npm run user:remove -- ana                  # sessions of a removed user stop working at once
+npm run user:logout-all -- ana              # sign ana out of every browser
 ```
 
-Sessions are signed, httpOnly cookies valid for 7 days. Failed logins are throttled in memory over
+Sessions are signed, httpOnly cookies valid for 7 days. Each token carries the user's
+`sessionVersion` from `users.json`; changing a password or running `user:logout-all` bumps it, so
+every existing session of that user stops working on its next request (no restart needed).
+Cookies issued before session versions existed count as version 1 and keep working until then. Failed logins are throttled in memory over
 a 15-minute window: 5 failures per client address + username, 10 per username from any address,
 and 50 per client address across all usernames (slows password spraying without one person's typos
 locking out everyone behind the same NAT). A successful login clears that user's counters.
