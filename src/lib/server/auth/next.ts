@@ -1,7 +1,7 @@
 /**
  * Sanitise a post-login `next` target: only same-site relative paths survive.
- * Anything else (absolute URLs, `//host`, backslashes, control characters, the login page itself)
- * becomes `/`.
+ * Anything else (absolute URLs, `//host`, backslashes, control characters, the login page itself,
+ * or a path that only turns into `//host` after dot-segment normalisation) becomes `/`.
  */
 export function sanitizeNext(raw: string | null | undefined): string {
 	if (!raw || raw.length > 2048) return '/';
@@ -18,5 +18,10 @@ export function sanitizeNext(raw: string | null | undefined): string {
 	}
 	if (url.origin !== 'http://local.invalid') return '/';
 	if (url.pathname === '/login' || url.pathname.startsWith('/login/')) return '/';
-	return url.pathname + url.search + url.hash;
+	const result = url.pathname + url.search + url.hash;
+	// Dot segments are resolved by the URL parser, so `/..//evil.com` only becomes the
+	// protocol-relative `//evil.com` here: check the normalised result, not just the input.
+	if (!result.startsWith('/') || result.startsWith('//') || result.startsWith('/\\')) return '/';
+	if (new URL(result, 'http://local.invalid').origin !== 'http://local.invalid') return '/';
+	return result;
 }

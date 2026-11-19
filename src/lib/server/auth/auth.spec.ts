@@ -110,6 +110,28 @@ describe('sanitizeNext', () => {
 	])('%s -> %s', (raw, expected) => {
 		expect(sanitizeNext(raw)).toBe(expected);
 	});
+
+	it.each([
+		'/..//evil.com',
+		'/./..//evil.com',
+		'/%2e%2e//evil.com',
+		'/%2E%2E//evil.com/x?y=1',
+		'/..\\evil.com',
+		'//evil.com',
+		'https://evil.com',
+		'/\\evil.com',
+		'/%09/evil.com',
+		'/%0a/evil.com',
+		'/..%09//evil.com',
+		'/../%2fevil.com',
+		'/a/../..//evil.com'
+	])('keeps %s on this site', (raw) => {
+		const result = sanitizeNext(raw);
+		expect(result.startsWith('/')).toBe(true);
+		expect(result.startsWith('//')).toBe(false);
+		expect(result.startsWith('/\\')).toBe(false);
+		expect(new URL(result, 'http://local.invalid').origin).toBe('http://local.invalid');
+	});
 });
 
 describe('login throttle', () => {
