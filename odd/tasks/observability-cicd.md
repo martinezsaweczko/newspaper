@@ -2,7 +2,7 @@
 
 ## Objective
 OpenTelemetry server tracing (per the SvelteKit observability docs), Prometheus metrics reachable
-from the LAN only, and a CI/CD pipeline modelled on the user's familyFinancial project.
+from the LAN only, and a CI/CD pipeline (test on PRs and main, tagged image release to GHCR).
 
 ## Decisions (made by the orchestrator)
 - Traces: NodeSDK started from `src/instrumentation.server.ts` only when
