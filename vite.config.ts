@@ -23,6 +23,13 @@ export default defineConfig({
 	],
 	test: {
 		expect: { requireAssertions: true },
+		// `npm run coverage`; CI publishes the line total for the README badge.
+		coverage: {
+			provider: 'v8',
+			include: ['src/**/*.{ts,svelte}'],
+			exclude: ['src/**/*.{test,spec}.ts', 'src/**/*.d.ts'],
+			reporter: ['text-summary', 'json-summary']
+		},
 		projects: [
 			{
 				extends: './vite.config.ts',

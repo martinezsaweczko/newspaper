@@ -1,5 +1,11 @@
 # NewsPaper
 
+[![Pipeline](https://github.com/martinezsaweczko/newspaper/actions/workflows/pipeline.yml/badge.svg?branch=main)](https://github.com/martinezsaweczko/newspaper/actions/workflows/pipeline.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/martinezsaweczko/newspaper/badges/coverage.json)](https://github.com/martinezsaweczko/newspaper/actions/workflows/pipeline.yml)
+[![Latest release](https://img.shields.io/github/v/release/martinezsaweczko/newspaper)](https://github.com/martinezsaweczko/newspaper/releases/latest)
+[![Image](https://img.shields.io/badge/ghcr.io-newspaper-blue?logo=docker)](https://github.com/martinezsaweczko/newspaper/pkgs/container/newspaper)
+[![Node](https://img.shields.io/badge/node-24-339933?logo=node.js&logoColor=white)](.nvmrc)
+
 A private newsstand behind Google sign-in and admin approval. Point it at one shared folder full of newspaper PDFs and
 it shows every edition as its rendered **front page** (never a file name), grouped by **region**,
 one day at a time. Click a front page to read the edition in the built-in reader.
@@ -394,6 +400,7 @@ has a cost; turn it on when you need it.
 npm run check            # types
 npm run lint             # prettier + eslint (npm run format to fix)
 npm run test:unit -- --run   # DB tests need `npm run db:up` (they skip when MySQL is down)
+npm run coverage             # the same tests with a coverage summary (coverage/, git-ignored)
 npm run build && node build  # both need DATABASE_URL (from .env)
 npm run db:generate          # after editing src/lib/server/db/schema.ts: writes drizzle/NNNN_*.sql
 npm run db:reset -- --yes    # dev only: drop every table of the loopback DATABASE_URL database
