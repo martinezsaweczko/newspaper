@@ -121,6 +121,12 @@ See README.md for the product overview, configuration and deploy.
   `LEGAL_OPERATOR_NAME` / `LEGAL_CONTACT_EMAIL` (`config.legal`). **Keep the text in sync with what
   the app actually stores** (schema, cookies, logs, metrics, traces) and bump its `UPDATED` date.
 - PDFs: `/pdf/[id]` streams with HTTP Range (206) and inline disposition; `?download=1` for attachment.
+- Reader: a front page opens `/leer/[id]` (the edition's masthead/date header + `PdfReader.svelte`),
+  not the browser's PDF viewer. pdf.js (`pdfjs-dist`, imported in `onMount` only, worker via
+  `?url`) loads `/pdf/[id]` in 1 MB Range chunks; a progress bar follows `onProgress`. Pages are
+  canvases drawn only near the viewport and freed when they leave it; zoom keeps the reading
+  position. Falls back to links to the browser viewer and the download if pdf.js fails. The first
+  (no-Range) request still records the opening in the reading log.
 - Observability: `src/instrumentation.server.ts` (loaded before the app, never by `vite build`)
   calls `startTelemetry(process.env)` in `src/lib/server/observability/` (state on globalThis so the
   dev server's re-imports start nothing twice). Traces: `tracing.server` in `vite.config.ts`; the
