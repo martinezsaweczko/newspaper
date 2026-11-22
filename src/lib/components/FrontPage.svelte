@@ -3,7 +3,7 @@
 	import { formatDate } from '#lib/format/date.ts';
 	import type { Edition } from '#lib/types.ts';
 
-	/** One edition on the stand: its rendered front page, opening the PDF. */
+	/** One edition on the stand: its rendered front page, opening the in-app reader. */
 	let {
 		edition,
 		caption,
@@ -29,8 +29,7 @@
 
 <figure class="flex flex-col gap-3">
 	<a
-		href={resolve('/pdf/[id]', { id: edition.id })}
-		data-sveltekit-reload
+		href={resolve('/leer/[id]', { id: edition.id })}
 		class="group block rounded-[2px] focus-visible:outline-offset-[6px]"
 	>
 		<div class="front-page relative aspect-[32/45] overflow-hidden bg-shelf">
@@ -40,7 +39,7 @@
 				>
 					<span class="font-serif text-xl leading-tight font-bold text-ink">{edition.masthead}</span
 					>
-					<span class="text-[13px] text-ink-soft">Portada no disponible. Abre el PDF.</span>
+					<span class="text-[13px] text-ink-soft">Portada no disponible. Abre la edición.</span>
 					<span class="sr-only">{alt}</span>
 				</div>
 			{:else}

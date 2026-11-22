@@ -2,7 +2,7 @@
 
 A private newsstand behind Google sign-in and admin approval. Point it at one shared folder full of newspaper PDFs and
 it shows every edition as its rendered **front page** (never a file name), grouped by **region**,
-one day at a time. Click a front page to read the PDF.
+one day at a time. Click a front page to read the edition in the built-in reader.
 
 - **One shared folder.** PDFs at the top level or in subfolders (up to 4 levels deep); the app
   only reads them. Subfolders are storage only: they never become regions.
