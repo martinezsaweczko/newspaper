@@ -5,6 +5,10 @@ name: CI
 # the Actions tab.
 on:
   workflow_call:
+    outputs:
+      coverage:
+        description: Line coverage of the unit tests, in percent (e.g. 55.46)
+        value: ${{ jobs.test.outputs.coverage }}
   workflow_dispatch:
 
 permissions:
@@ -14,6 +18,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      coverage: ${{ steps.coverage.outputs.coverage }}
     # MySQL for the integration tests: each spec creates and drops its own newspaper_test_* database.
     services:
       mysql:
@@ -54,6 +60,9 @@ jobs:
           fi
       - run: npm run lint
       - run: npm run check
-      - name: Unit tests
-        run: npm run test:unit -- --run
+      - name: Unit tests with coverage
+        id: coverage
+        run: |
+          npm run coverage
+          echo "coverage=$(node -p "require('./coverage/coverage-summary.json').total.lines.pct")" >> "$GITHUB_OUTPUT"
       - run: npm run build

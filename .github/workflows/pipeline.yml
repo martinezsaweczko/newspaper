@@ -1,6 +1,7 @@
 name: CI/CD
 
-# Entry workflow. Pull requests and pushes to main: tests only.
+# Entry workflow. Pull requests and pushes to main: tests only (pushes to main also refresh the
+# coverage badge on the orphan `badges` branch).
 # Semantic version tags (vX.Y.Z) on main: tests, then the container is built with podman,
 # smoke-tested against a MySQL container (auto-migrate, login, /admin, a rendered front page, a
 # reading_events row for an opened PDF, healthcheck, /metrics) and published to GHCR tagged with
@@ -21,6 +22,57 @@ permissions:
 jobs:
   test:
     uses: ./.github/workflows/ci.yml
+
+  coverage-badge:
+    # Pushes to main only: writes coverage.json (shields.io endpoint format) to the orphan `badges`
+    # branch, which the README's Coverage badge reads.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: coverage-badge
+      cancel-in-progress: false
+    steps:
+      - name: Publish coverage.json to the badges branch
+        env:
+          COVERAGE: ${{ needs.test.outputs.coverage }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if ! printf '%s' "$COVERAGE" | grep -Eq '^[0-9]+(\.[0-9]+)?$'; then
+            echo "Unexpected coverage total: '$COVERAGE'"
+            exit 1
+          fi
+
+          color="$(awk -v c="$COVERAGE" 'BEGIN {
+            if (c >= 80) print "brightgreen"
+            else if (c >= 60) print "yellowgreen"
+            else if (c >= 40) print "yellow"
+            else print "orange"
+          }')"
+
+          workdir="$(mktemp -d)"
+          cd "$workdir"
+          printf '{"schemaVersion":1,"label":"coverage","message":"%s%%","color":"%s"}\n' \
+            "$COVERAGE" "$color" > coverage.json
+          cat coverage.json
+
+          git init --quiet --initial-branch=badges
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add coverage.json
+          git commit --quiet -m "chore(badges): coverage ${COVERAGE}% for ${SOURCE_SHA}"
+
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w 0)"
+          echo "::add-mask::${auth}"
+          git -c "http.extraheader=AUTHORIZATION: basic ${auth}" \
+            push --force "${SERVER_URL}/${REPOSITORY}.git" HEAD:refs/heads/badges
 
   image:
     # The container is only created for a semantic version tag (vX.Y.Z) that points at a commit on main.

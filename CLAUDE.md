@@ -13,6 +13,7 @@ See README.md for the product overview, configuration and deploy.
 - `npm run check` — svelte-check / types
 - `npm run lint` / `npm run format` — prettier + eslint
 - `npm run test:unit -- --run` — vitest
+- `npm run coverage` — the same tests with a v8 coverage summary (`coverage/`, git-ignored)
 - `npm run build` — production build to `build/` (`node build`)
 - `npm run user:add -- <name>` / `npm run user:remove -- <name>` / `npm run user:logout-all -- <name>` — manage local admins (users.json, the fallback login)
 - `npm run db:up` (`podman compose up -d db`) — the dev MySQL on 127.0.0.1:3307; `npm run dev` and the DB tests need it
@@ -180,7 +181,9 @@ at `/data`; config in `.env` (see `.env.example`).
   Node from `.nvmrc`, `npm ci`, `poppler-utils`, a `mysql:8.4` service (health-checked, on :3307)
   with `DATABASE_URL` / `TEST_DATABASE_ADMIN_URL` and `REQUIRE_TEST_DB=1` (DB tests fail instead
   of skipping), a migration drift check (`npm run db:generate`, then `git status --porcelain --
-  drizzle` must be empty, untracked files included), lint, check, unit tests, build. On a `vX.Y.Z`
+  drizzle` must be empty, untracked files included), lint, check, unit tests with coverage (`npm run coverage`; the line total is the workflow's
+  `coverage` output), build. On pushes to `main`, job `coverage-badge` writes `coverage.json` to the
+  orphan `badges` branch for the README's Coverage badge. On a `vX.Y.Z`
   tag that is on `main`, job `image` builds with `podman build --format docker` (keeps
   HEALTHCHECK) plus OCI labels, runs `scripts/smoke-image.sh` (MySQL 8.4 + the app on a private
   podman network, PID-suffixed names, all removed after; tables from the auto-migrate via `SHOW

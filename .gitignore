@@ -29,3 +29,4 @@ newspapers/**/*.pdf
 # Local tooling
 .claude/
 .taste-skill/
+coverage/
