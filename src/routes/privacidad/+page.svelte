@@ -10,7 +10,7 @@
 	 * reading_events), the cookies in auth/session.ts and auth/google.ts, and the observability.
 	 * Bump UPDATED on every change to the text.
 	 */
-	const UPDATED = '2026-11-19';
+	const UPDATED = '2026-11-27';
 	const operator = $derived(data.legal.operator ?? 'el administrador de este quiosco');
 	const Operator = $derived(operator.charAt(0).toUpperCase() + operator.slice(1));
 </script>
@@ -62,6 +62,12 @@
 			cuando están activadas, identifican la cuenta con un número interno y no contienen tu correo ni
 			tu dirección IP. Para frenar intentos repetidos en el acceso de administración, el servidor cuenta
 			en memoria los intentos fallidos por dirección IP durante unos minutos, sin guardarlos.
+		</li>
+		<li>
+			<strong>Si estás conectado:</strong> mientras tienes el quiosco abierto, el servidor sabe en memoria
+			que estás en línea, para que los administradores puedan verlo (y tú, si hay algún administrador
+			conectado). No se guarda: desaparece 30 segundos después de cerrar la pestaña y no queda ningún
+			historial de conexiones.
 		</li>
 	</ul>
 

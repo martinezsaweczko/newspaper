@@ -1,24 +1,22 @@
-import { building } from '$app/env';
-import {
-	canonicalLegalPath,
-	decideAccess,
-	resolveUser,
-	userLabel
-} from '#lib/server/auth/current.ts';
-import { db, userCache, users } from '#lib/server/auth/index.ts';
+import { building, dev } from '$app/env';
+import { canonicalLegalPath, decideAccess, userLabel } from '#lib/server/auth/current.ts';
+import { db, sessionUser } from '#lib/server/auth/index.ts';
 import { isCrossSiteForm } from '#lib/server/auth/origin.ts';
 import { SESSION_COOKIE } from '#lib/server/auth/session.ts';
-import { config, DEV_USER, sessionSecret } from '#lib/server/config.ts';
+import { presence } from '#lib/server/chat/index.ts';
+import { config, sessionSecret } from '#lib/server/config.ts';
 import { closeDbHandle } from '#lib/server/db/index.ts';
 import { redactUrl, runMigrations, waitForDb } from '#lib/server/db/migrate.ts';
 import { seedIgnoreFile } from '#lib/server/library/ignore.ts';
+import { isStopping, markStopping } from '#lib/server/lifecycle.ts';
 import { seedRegionsFile } from '#lib/server/library/regions.ts';
 import {
 	cachedLoader,
 	initMetrics,
 	recordHttpRequest,
 	recordPageView,
-	setDbGauges
+	setDbGauges,
+	setPresenceGauges
 } from '#lib/server/observability/metrics.ts';
 import { gaugeValues } from '#lib/server/reading/views.ts';
 import type { Handle, ServerInit } from '@sveltejs/kit/hooks';
@@ -33,6 +31,18 @@ export const init: ServerInit = async () => {
 	initMetrics();
 	// newspaper_users / newspaper_readers_active: one cached query per minute at most
 	setDbGauges(cachedLoader(() => gaugeValues(db())));
+	setPresenceGauges(() => presence.counts());
+	// adapter-node's graceful shutdown waits for open responses: end the live streams at once and
+	// close every connection after its response (lifecycle.ts), so the browsers reconnect to the
+	// next process. Not on the dev server: there a SIGINT listener would get in Vite's way.
+	if (!dev) {
+		for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+			process.once(signal, () => {
+				markStopping();
+				presence.closeAll();
+			});
+		}
+	}
 	// wait for MySQL (container start order), then apply pending migrations from /drizzle
 	await waitForDb(config.databaseUrl);
 	await runMigrations(db());
@@ -76,12 +86,7 @@ const guarded: Handle = async ({ event, resolve }) => {
 	// Rejects removed users and tokens older than the account's session version (password change,
 	// `npm run user:logout-all`, block, role change). users.json is re-read only when it changes;
 	// Google accounts come from a 5-second cache, so a page of thumbnails is one query.
-	event.locals.user = await resolveUser(event.cookies.get(SESSION_COOKIE), {
-		secret: sessionSecret(),
-		localUsers: users,
-		loadUser: (id) => userCache.get(id)
-	});
-	if (!event.locals.user && config.authDisabled) event.locals.user = DEV_USER;
+	event.locals.user = await sessionUser(event.cookies.get(SESSION_COOKIE));
 	if (event.locals.user) {
 		// the account id or `local:<name>`, never the email
 		event.tracing.root.setAttributes({
@@ -106,5 +111,6 @@ const guarded: Handle = async ({ event, resolve }) => {
 	response.headers.set('x-content-type-options', 'nosniff');
 	response.headers.set('referrer-policy', 'same-origin');
 	response.headers.set('x-frame-options', 'SAMEORIGIN');
+	if (isStopping()) response.headers.set('connection', 'close');
 	return response;
 };

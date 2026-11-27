@@ -1,7 +1,9 @@
-import { config } from '../config.ts';
+import type { CurrentUser } from '../../types.ts';
+import { config, DEV_USER, sessionSecret } from '../config.ts';
 import { getDbHandle, type Db } from '../db/index.ts';
 import type { UserRow } from '../db/schema.ts';
 import { findUserById } from './accounts.ts';
+import { resolveUser } from './current.ts';
 import { createOidcClient, type OidcClient } from './oidc.ts';
 import { createLoginThrottle } from './throttle.ts';
 import { createUserCache } from './user-cache.ts';
@@ -26,3 +28,17 @@ export const userCache = createUserCache<UserRow>({ load: (id) => findUserById(d
 const google: OidcClient | null = config.google ? createOidcClient(config.google) : null;
 /** The Google OIDC client, or null when Google sign-in is not configured. */
 export const googleClient = () => google;
+
+/**
+ * The signed-in user behind a session cookie (see `resolveUser`), or the dev bypass user when
+ * AUTH_DISABLED is on. The hook calls it per request; long-lived streams call it again to notice
+ * a block, a role change or a sign-out everywhere.
+ */
+export async function sessionUser(token: string | undefined): Promise<CurrentUser | null> {
+	const user = await resolveUser(token, {
+		secret: sessionSecret(),
+		localUsers: users,
+		loadUser: (id) => userCache.get(id)
+	});
+	return user ?? (config.authDisabled ? DEV_USER : null);
+}

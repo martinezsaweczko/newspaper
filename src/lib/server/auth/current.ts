@@ -46,9 +46,7 @@ export async function resolveUser(
 }
 
 /** A label for traces and logs: the account id, never the email. */
-export function userLabel(user: CurrentUser): string {
-	return user.kind === 'google' ? String(user.id) : `local:${user.name}`;
-}
+export { userLabel } from '../../user-label.ts';
 
 export type Access =
 	| { kind: 'pass' }

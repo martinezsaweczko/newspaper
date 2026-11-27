@@ -73,3 +73,17 @@ describe('cachedLoader', () => {
 		}
 	});
 });
+
+describe('isPageView and the live stream', () => {
+	it('never counts /chat/stream as a page view', () => {
+		expect(
+			isPageView({
+				route: '/chat/stream',
+				method: 'GET',
+				status: 200,
+				contentType: 'text/event-stream; charset=utf-8',
+				isDataRequest: false
+			})
+		).toBe(false);
+	});
+});

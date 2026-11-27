@@ -3,6 +3,7 @@
 	import '@fontsource-variable/geist';
 	import './layout.css';
 	import favicon from '#lib/assets/favicon.svg';
+	import { connectPresence } from '#lib/chat/presence.svelte.ts';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import type { LayoutProps } from './$types';
@@ -11,6 +12,12 @@
 	// Pages that already link the legal texts in their own content (or are them).
 	const OWN_LINKS = new Set(['/login', '/pendiente', '/bloqueado', '/privacidad', '/condiciones']);
 	const footer = $derived(Boolean(data.user) && !OWN_LINKS.has(page.route.id ?? ''));
+
+	// One live channel for the whole visit (approved accounts only): who is online.
+	const live = $derived(data.user?.status === 'approved');
+	$effect(() => {
+		if (live) return connectPresence();
+	});
 </script>
 
 <svelte:head>

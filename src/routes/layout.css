@@ -17,6 +17,8 @@
 	--t-on-ink: #fafafa; /* text on an ink fill */
 	--t-signal: #1d5fbf; /* the one hue: focus ring, today's marker */
 	--t-error: #a3201c;
+	--t-online: #1e8449; /* presence dot: someone is connected (3:1+ on paper) */
+	--t-offline: #b3261e; /* presence dot: nobody is connected */
 	--t-shadow: 20 18 12; /* rgb triplet for the paper shadow */
 	--t-page-dim: 1; /* front pages are shown as printed */
 
@@ -48,6 +50,8 @@
 		--t-on-ink: #141312;
 		--t-signal: #7eaaf5;
 		--t-error: #ff8c84;
+		--t-online: #5cc98a;
+		--t-offline: #ff7a70;
 		--t-shadow: 0 0 0;
 		--t-page-dim: 0.9; /* newsprint under a lamp, not a light box */
 		--t-google-surface: #131314;
@@ -67,6 +71,8 @@
 	--color-on-ink: var(--t-on-ink);
 	--color-signal: var(--t-signal);
 	--color-error: var(--t-error);
+	--color-online: var(--t-online);
+	--color-offline: var(--t-offline);
 	--color-google-surface: var(--t-google-surface);
 	--color-google-border: var(--t-google-border);
 	--color-google-text: var(--t-google-text);

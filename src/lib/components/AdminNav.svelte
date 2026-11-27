@@ -2,13 +2,16 @@
 	/** The sections of /admin: underline tabs on one hairline, Usuarios carrying the pending queue. */
 	import { resolve } from '$app/paths';
 
-	let { current, pending = 0 }: { current: 'resumen' | 'lecturas' | 'usuarios'; pending?: number } =
-		$props();
+	let {
+		current,
+		pending = 0
+	}: { current: 'resumen' | 'lecturas' | 'usuarios' | 'conectados'; pending?: number } = $props();
 
 	const SECTIONS = [
 		{ id: 'resumen', label: 'Resumen', href: resolve('/admin') },
 		{ id: 'lecturas', label: 'Lecturas', href: resolve('/admin/lecturas') },
-		{ id: 'usuarios', label: 'Usuarios', href: resolve('/admin/usuarios') }
+		{ id: 'usuarios', label: 'Usuarios', href: resolve('/admin/usuarios') },
+		{ id: 'conectados', label: 'Conectados', href: resolve('/admin/conectados') }
 	] as const;
 </script>
 

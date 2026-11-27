@@ -241,6 +241,17 @@ Admins see it under **Administración**:
   `dd/mm/aaaa`). Clicking a reader or a newspaper anywhere filters by it. **Descargar CSV**
   (`/admin/lecturas.csv`, same filters) exports it for a spreadsheet (`;`-separated, UTF-8).
 - **Usuarios** (`/admin/usuarios`): approvals and accounts (above).
+- **Conectados** (`/admin/conectados`): approved accounts and local admins, online first, updated
+  live.
+
+**Who is online.** Every signed-in page of an approved account keeps one Server-Sent Events
+stream open (`/chat/stream`). Someone is online while they have the newsstand open in a tab, and
+for 30 s after closing the last one (a reload does not flicker). Readers see a green or red dot
+in the header for "an admin is online"; admins see how many others are online, and who, on
+Conectados. It lives in the app's memory only: nothing about connections is stored, and it needs
+a single replica (each process only knows its own streams). Behind Envoy (Gateway API) give the
+route a request timeout above the default 15 s, or the stream reconnects every 15 s (harmless,
+but noisy).
 
 **Privacy.** The reading log is kept indefinitely, by the operator's choice: there is no
 automatic deletion. Under the GDPR, people must be told their reading activity is recorded; the
@@ -343,8 +354,10 @@ Exposed series (labels are low-cardinality: never users, emails, ids or file nam
 | `newspaper_front_pages_viewed_total`          | counter   | `newspaper`, `region`: front pages served with 200 (cache hits and fresh renders)               |
 | `newspaper_users`                             | gauge     | `status` = `pending`, `approved`, `blocked` (Google accounts)                                   |
 | `newspaper_readers_active`                    | gauge     | `window` = `1d`, `7d`, `30d`: distinct readers with an opening in the window                    |
+| `newspaper_chat_connections`                  | gauge     | Open live streams (`/chat/stream`), one per open signed-in tab                                  |
+| `newspaper_users_online`                      | gauge     | `role` = `user`, `admin`: people online now (from memory, not the database)                     |
 
-The two gauges come from the database through a cached query: at most one every 60 s (a failed one
+The users and readers gauges come from the database through a cached query: at most one every 60 s (a failed one
 counts too, so a down database is not queried on every scrape), and a scrape waits at most 2 s for
 it before answering with the last values.
 

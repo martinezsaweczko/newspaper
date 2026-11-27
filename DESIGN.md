@@ -42,6 +42,8 @@ Achromatic: no brand hue in the chrome. One ground, one ink, the ink as the prim
 | `--t-on-ink`   | `#fafafa`  | `#141312` | Text on an ink fill                                     |
 | `--t-signal`   | `#1d5fbf`  | `#7eaaf5` | The one hue: the focus ring                             |
 | `--t-error`    | `#a3201c`  | `#ff8c84` | Login error text                                        |
+| `--t-online`   | `#1e8449`  | `#5cc98a` | Presence dot: online                                    |
+| `--t-offline`  | `#b3261e`  | `#ff7a70` | Presence dot: offline                                   |
 | `--t-shadow`   | `20 18 12` | `0 0 0`   | RGB of the paper shadow                                 |
 | `--t-page-dim` | `1`        | `0.9`     | Brightness of front pages (dimmed a little in the dark) |
 
@@ -52,6 +54,9 @@ Rules:
 - Colour stays under 1% of the screen: the focus ring only. The front pages bring their own.
   One exception, from the app-screen rules: on `/admin` the main data element (the bars of
   "Periódicos más leídos") carries `--t-signal`; everything else on the dashboard stays ink.
+- Second exception: the presence dots (8-10px, green online / red offline) are status, not
+  decoration. They are never alone: the words next to them say the same ("Administración en
+  línea", "Desconectados"), so colour is not the only cue.
 - Dark mode follows `prefers-color-scheme`; front pages stay printed paper, slightly dimmed.
 - **Brand exception: the Google button.** `GoogleButton.svelte` follows Google's sign-in branding
   guidelines, which fix its colours, so they are taken as given rather than tuned to the stand:
@@ -86,6 +91,9 @@ Two faces, both self-hosted from npm (`@fontsource-variable/*`), no external req
 - `Nameplate.svelte` — the wordmark and its double rule (`stand` size on app pages, `cover` on login).
 - `SiteHeader.svelte` — skip link, "Private newsstand", the signed-in user, Administración (admins)
   and Sign out.
+- `PresenceDot.svelte` — the 8px (sm) or 10px (md) online/offline dot, `aria-hidden`, grey while
+  the stream has not answered. In `SiteHeader`, after "Quiosco privado": readers see "Administración
+  en línea / desconectada"; admins see "N personas más en línea", linking to Conectados.
 - `AccountNotice.svelte` — the page of an account that cannot read (pending, blocked).
 - `PrivacyNotice.svelte` — the reading-log notice in small print (`/login`, `/pendiente`), linking
   to `/privacidad`. Under it, and in a small hairline footer on signed-in pages, "Política de
@@ -97,8 +105,11 @@ Two faces, both self-hosted from npm (`@fontsource-variable/*`), no external req
 - `FrontPage.svelte` — the front page linking to the PDF, alt text
   `"Portada de <Masthead>, dd/mm/yyyy"`, masthead caption linking to the back issues. On a render
   failure it becomes a sheet with the masthead set in Newsreader and "Front page unavailable".
-- `AdminNav.svelte` — Resumen / Lecturas / Usuarios as underline tabs on one hairline; Usuarios
+- `AdminNav.svelte` — Resumen / Lecturas / Usuarios / Conectados as underline tabs on one hairline; Usuarios
   carries the pending count as an ink pill.
+- Conectados (`/admin/conectados`): "En línea" and "Desconectados" under region-style heads (3px
+  ink rule, serif `h2`, count on the right), rows of dot + name + email (or "Administrador local")
+  and an "Admin" outline tag; a note in small grey that it updates itself and keeps no history.
 - `ReadingTable.svelte` — the reading log rows (fecha y hora, lector, periódico, región, edición,
   tipo); a reader or newspaper links to the log filtered by it; below `md` each row folds into
   two lines under the reader.

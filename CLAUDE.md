@@ -128,6 +128,16 @@ See README.md for the product overview, configuration and deploy.
   canvases drawn only near the viewport and freed when they leave it; zoom keeps the reading
   position. Falls back to links to the browser viewer and the download if pdf.js fails. The first
   (no-Range) request still records the opening in the reading log.
+- Presence: `/chat/stream` is a Server-Sent Events endpoint (`chat/sse.ts`: retry hint, `: ping`
+  every 20 s, `check` re-resolves the session cookie via `sessionUser` before each ping and ends
+  the stream on a block, role change or sign-out everywhere). `chat/presence.ts` (pure, in memory,
+  one per process on globalThis) counts streams per `userLabel` key with a 30 s grace after the
+  last one; readers get `{admins}`, admins also `{online: keys[]}`, sent only on change. The root
+  layout opens one shared `EventSource` (`#lib/chat/presence.svelte.ts`) for approved accounts;
+  `SiteHeader` shows the dot (`PresenceDot.svelte`), `/admin/conectados` the list. Single replica
+  only. Not traced (`isLiveStream` in `tracing.ts`), not a page view; gauges
+  `newspaper_chat_connections`, `newspaper_users_online{role}`. On SIGTERM/SIGINT (not in dev) the
+  hook closes every stream so adapter-node's graceful shutdown does not wait for them.
 - Observability: `src/instrumentation.server.ts` (loaded before the app, never by `vite build`)
   calls `startTelemetry(process.env)` in `src/lib/server/observability/` (state on globalThis so the
   dev server's re-imports start nothing twice). Traces: `tracing.server` in `vite.config.ts`; the

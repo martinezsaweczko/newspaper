@@ -19,6 +19,13 @@ export interface DbGaugeValues {
 }
 let dbGauges: (() => Promise<DbGaugeValues | null>) | undefined;
 
+/** Open live streams and people online by role (from the in-memory presence hub). */
+export interface PresenceGaugeValues {
+	connections: number;
+	online: Record<'user' | 'admin', number>;
+}
+let presenceGauges: (() => PresenceGaugeValues) | undefined;
+
 function create() {
 	const meter = metrics.getMeter('newspaper');
 	meter
@@ -47,6 +54,23 @@ function create() {
 			}
 		},
 		[users, readers]
+	);
+	const streams = meter.createObservableGauge('newspaper_chat_connections', {
+		description: 'Open live streams (/chat/stream), one per open signed-in tab',
+		valueType: ValueType.INT
+	});
+	const online = meter.createObservableGauge('newspaper_users_online', {
+		description: 'People online now (an open tab, or one closed under 30 s ago), by role',
+		valueType: ValueType.INT
+	});
+	meter.addBatchObservableCallback(
+		(result) => {
+			const values = presenceGauges?.();
+			if (!values) return;
+			result.observe(streams, values.connections);
+			for (const [role, n] of Object.entries(values.online)) result.observe(online, n, { role });
+		},
+		[streams, online]
 	);
 	return {
 		pageViews: meter.createCounter('newspaper_page_views', {
@@ -130,7 +154,7 @@ export function setEditionCount(count: number): void {
 }
 
 /** Route ids that are not pages: never page views even if they answered HTML. */
-const NOT_PAGES = new Set(['/thumb/[id]', '/pdf/[id]', '/admin/lecturas.csv']);
+const NOT_PAGES = new Set(['/thumb/[id]', '/pdf/[id]', '/admin/lecturas.csv', '/chat/stream']);
 
 export interface PageViewInput {
 	route: string | null;
@@ -165,6 +189,12 @@ export function recordFrontPageViewed(newspaper: string, region: string): void {
 /** The source of newspaper_users and newspaper_readers_active (a cached DB query). */
 export function setDbGauges(source: () => Promise<DbGaugeValues | null>): void {
 	dbGauges = source;
+	get();
+}
+
+/** The source of newspaper_chat_connections and newspaper_users_online. */
+export function setPresenceGauges(source: () => PresenceGaugeValues): void {
+	presenceGauges = source;
 	get();
 }
 
