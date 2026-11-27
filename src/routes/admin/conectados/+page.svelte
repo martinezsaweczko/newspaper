@@ -2,13 +2,14 @@
 	import AdminNav from '#lib/components/AdminNav.svelte';
 	import PresenceDot from '#lib/components/PresenceDot.svelte';
 	import SiteHeader from '#lib/components/SiteHeader.svelte';
-	import { presence } from '#lib/chat/presence.svelte.ts';
+	import { live } from '#lib/chat/live.svelte.ts';
+	import { resolve } from '$app/paths';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 
-	const known = $derived(presence.admins !== null);
-	const online = $derived(new Set(presence.online));
+	const known = $derived(live.admins !== null);
+	const online = $derived(new Set(live.online));
 	const byName = (a: { name: string }, b: { name: string }) =>
 		a.name.localeCompare(b.name, 'es', { sensitivity: 'base' });
 	const groups = $derived([
@@ -83,6 +84,12 @@
 										<span
 											class="flex-none rounded-full border border-hairline px-2 text-[12px] leading-5 text-ink-soft"
 											>Admin</span
+										>
+									{:else}
+										<a
+											href={resolve(`/admin/mensajes?lector=${person.key}`)}
+											class="flex min-h-11 flex-none items-center rounded-[6px] px-2 text-[14px] text-ink underline-offset-4 hover:underline"
+											aria-label={`Escribir a ${person.name}`}>Escribir</a
 										>
 									{/if}
 									<span class="sr-only">{group.id === 'online' ? 'en línea' : 'desconectado'}</span>

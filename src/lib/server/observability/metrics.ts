@@ -106,6 +106,11 @@ function create() {
 			description: 'Login attempts by result',
 			valueType: ValueType.INT
 		}),
+		chatMessages: meter.createCounter('newspaper_chat_messages', {
+			description:
+				'Chat messages sent, by direction (in = reader to admins, out = admin to reader)',
+			valueType: ValueType.INT
+		}),
 		pdfBytes: meter.createCounter('newspaper_pdf_bytes_sent', {
 			description: 'PDF bytes streamed to clients',
 			unit: 'By',
@@ -142,6 +147,10 @@ export function recordThumbnail(result: ThumbResult, seconds: number): void {
 
 export function recordLogin(result: LoginResult): void {
 	get().logins.add(1, { result });
+}
+
+export function recordChatMessage(direction: 'in' | 'out'): void {
+	get().chatMessages.add(1, { direction });
 }
 
 export function addPdfBytes(bytes: number): void {

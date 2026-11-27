@@ -7,7 +7,13 @@ const admin = { key: 'local:root', admin: true };
 
 function inbox() {
 	const views: PresenceView[] = [];
-	return { views, send: (v: PresenceView) => views.push(v), last: () => views.at(-1) };
+	return {
+		views,
+		send: (event: string, v: unknown) => {
+			if (event === 'presence') views.push(v as PresenceView);
+		},
+		last: () => views.at(-1)
+	};
 }
 
 describe('createPresence', () => {
@@ -76,6 +82,21 @@ describe('createPresence', () => {
 		leave();
 		hub.connect({ ...reader, admin: true }, () => {}); // promoted, within the grace period
 		expect(r.last()).toEqual({ admins: true });
+	});
+
+	it('publishes events to one person or to every admin', () => {
+		const hub = createPresence();
+		const got: string[] = [];
+		const listen = (name: string) => (event: string, data: unknown) => {
+			if (event === 'message') got.push(`${name}:${data}`);
+		};
+		hub.connect(reader, listen('ana-tab1'));
+		hub.connect(reader, listen('ana-tab2'));
+		hub.connect(other, listen('bea'));
+		hub.connect(admin, listen('root'));
+		hub.publish({ key: '7' }, 'message', 'hola');
+		hub.publish({ admins: true }, 'message', 'nuevo');
+		expect(got).toEqual(['ana-tab1:hola', 'ana-tab2:hola', 'root:nuevo']);
 	});
 
 	it('counts connections and people by role', () => {

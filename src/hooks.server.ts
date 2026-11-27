@@ -4,6 +4,7 @@ import { db, sessionUser } from '#lib/server/auth/index.ts';
 import { isCrossSiteForm } from '#lib/server/auth/origin.ts';
 import { SESSION_COOKIE } from '#lib/server/auth/session.ts';
 import { presence } from '#lib/server/chat/index.ts';
+import { purgeMessages, retentionCutoff } from '#lib/server/chat/messages.ts';
 import { config, sessionSecret } from '#lib/server/config.ts';
 import { closeDbHandle } from '#lib/server/db/index.ts';
 import { redactUrl, runMigrations, waitForDb } from '#lib/server/db/migrate.ts';
@@ -47,6 +48,15 @@ export const init: ServerInit = async () => {
 	await waitForDb(config.databaseUrl);
 	await runMigrations(db());
 	console.log(`[db] migrations applied on ${redactUrl(config.databaseUrl)}`);
+	// chat messages are kept 6 months: purge at start, then once a day
+	const purge = () =>
+		purgeMessages(db(), retentionCutoff(new Date())).then(
+			(n) => n > 0 && console.log(`[chat] deleted ${n} messages older than 6 months`),
+			(err: unknown) =>
+				console.warn(`[chat] could not delete old messages: ${(err as Error)?.message ?? err}`)
+		);
+	void purge();
+	setInterval(purge, 24 * 60 * 60 * 1000).unref();
 	// adapter-node emits this after the HTTP server has closed; the pool's sockets would otherwise
 	// keep the process alive until the container runtime kills it
 	process.once('sveltekit:shutdown' as 'beforeExit', () => void closeDbHandle());

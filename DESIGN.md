@@ -91,6 +91,15 @@ Two faces, both self-hosted from npm (`@fontsource-variable/*`), no external req
 - `Nameplate.svelte` — the wordmark and its double rule (`stand` size on app pages, `cover` on login).
 - `SiteHeader.svelte` — skip link, "Private newsstand", the signed-in user, Administración (admins)
   and Sign out.
+- `ChatWidget.svelte` — readers only: a paper pill in the bottom-right corner ("Mensajes", the
+  dot, an ink unread pill) opening a 380px sheet (full width on a phone) with the soft
+  `.chat-panel` shadow: "Administración" in Newsreader with the dot and "En línea" / "Desconectada:
+  verá tu mensaje al volver", the thread, and a textarea with an ink "Enviar" (Enter sends,
+  Shift+Enter breaks the line; the character count shows in the last 200). Escape closes it and
+  returns focus to the pill.
+- `ChatThread.svelte` — bubbles: mine on the right in ink, theirs on the left on the shelf tone,
+  10px radius, the author over the first of a run, the time under each (`09:05` today, else
+  `dd/mm/yyyy HH:mm`), "· Visto" under my last one once read.
 - `PresenceDot.svelte` — the 8px (sm) or 10px (md) online/offline dot, `aria-hidden`, grey while
   the stream has not answered. In `SiteHeader`, after "Quiosco privado": readers see "Administración
   en línea / desconectada"; admins see "N personas más en línea", linking to Conectados.
@@ -107,9 +116,13 @@ Two faces, both self-hosted from npm (`@fontsource-variable/*`), no external req
   failure it becomes a sheet with the masthead set in Newsreader and "Front page unavailable".
 - `AdminNav.svelte` — Resumen / Lecturas / Usuarios / Conectados as underline tabs on one hairline; Usuarios
   carries the pending count as an ink pill.
+- Mensajes (`/admin/mensajes`): conversations on the left ("Escribir a" select, then a list with
+  dot, name in semibold while unread, compact time, the last line and an ink unread pill), the open
+  conversation on the right as a sheet with its own header and reply box; on a phone, one at a
+  time with "‹ Conversaciones" back.
 - Conectados (`/admin/conectados`): "En línea" and "Desconectados" under region-style heads (3px
   ink rule, serif `h2`, count on the right), rows of dot + name + email (or "Administrador local")
-  and an "Admin" outline tag; a note in small grey that it updates itself and keeps no history.
+  and an "Admin" outline tag or an "Escribir" link for readers; a note in small grey that it updates itself and keeps no history.
 - `ReadingTable.svelte` — the reading log rows (fecha y hora, lector, periódico, región, edición,
   tipo); a reader or newspaper links to the log filtered by it; below `md` each row folds into
   two lines under the reader.

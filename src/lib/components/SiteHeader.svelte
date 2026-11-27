@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { CurrentUser } from '#lib/types.ts';
-	import { presence } from '#lib/chat/presence.svelte.ts';
+	import { live } from '#lib/chat/live.svelte.ts';
 	import { userLabel } from '#lib/user-label.ts';
 	import { resolve } from '$app/paths';
 	import Nameplate from './Nameplate.svelte';
@@ -13,9 +13,7 @@
 	const reader = $derived(user?.status === 'approved');
 	const admin = $derived(reader && user?.role === 'admin');
 	/** Admins: everyone online but themselves. */
-	const others = $derived(
-		user ? presence.online.filter((key) => key !== userLabel(user)).length : 0
-	);
+	const others = $derived(user ? live.online.filter((key) => key !== userLabel(user)).length : 0);
 </script>
 
 <a
@@ -27,7 +25,7 @@
 	<div class="flex items-center justify-between gap-4 text-[13px] text-ink-soft">
 		<div class="flex min-w-0 items-center gap-3">
 			<span class="hidden sm:inline">Quiosco privado</span>
-			{#if reader && presence.admins !== null}
+			{#if reader && live.admins !== null}
 				{#if admin}
 					<a
 						href={resolve('/admin/conectados')}
@@ -42,10 +40,22 @@
 									: `${others} personas más en línea`}</span
 						>
 					</a>
+					{#if live.unread > 0}
+						<a
+							href={resolve('/admin/mensajes')}
+							class="-my-2 flex min-h-11 items-center gap-2 rounded-[6px] px-2 text-ink underline-offset-4 hover:underline"
+						>
+							<span
+								class="min-w-5 rounded-full bg-ink px-1.5 text-center text-[12px] leading-5 text-on-ink tabular-nums"
+								>{live.unread}</span
+							>
+							{live.unread === 1 ? 'mensaje sin leer' : 'mensajes sin leer'}
+						</a>
+					{/if}
 				{:else}
 					<span class="flex items-center gap-2" role="status">
-						<PresenceDot online={presence.admins} />
-						{presence.admins ? 'Administración en línea' : 'Administración desconectada'}
+						<PresenceDot online={live.admins} />
+						{live.admins ? 'Administración en línea' : 'Administración desconectada'}
 					</span>
 				{/if}
 			{:else}

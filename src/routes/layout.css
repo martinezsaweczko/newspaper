@@ -120,6 +120,13 @@
 		border-bottom: 1px solid var(--t-ink);
 	}
 
+	/* The reader's chat panel: a sheet lifted over the stand. */
+	.chat-panel {
+		box-shadow:
+			0 2px 4px rgb(var(--t-shadow) / 0.08),
+			0 18px 40px -12px rgb(var(--t-shadow) / 0.4);
+	}
+
 	/* A front page lying on the stand: paper on paper, lifted by a soft shadow. */
 	.front-page {
 		box-shadow:

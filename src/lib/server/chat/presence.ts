@@ -4,7 +4,8 @@
  * grace period after the last one closes, so a reload or a dropped connection does not flicker.
  *
  * Readers learn only whether an admin is online; admins get the keys of everyone online. Each
- * connection is sent a view only when its view changed.
+ * connection is sent a view only when its view changed. `publish` delivers other events (chat
+ * messages) to one person's connections or to every admin's.
  *
  * One process only: with more than one replica each pod would see just its own connections.
  */
@@ -27,9 +28,15 @@ export interface PresenceCounts {
 	online: { user: number; admin: number };
 }
 
+/** Sends one SSE event down a connection. */
+export type Emit = (event: string, data: unknown) => void;
+
+/** Who a published event is for: every admin, or one person by key. */
+export type Audience = { admins: true } | { key: string };
+
 interface Connection {
 	member: PresenceMember;
-	send: (view: PresenceView) => void;
+	send: Emit;
 	close: () => void;
 	last: string;
 }
@@ -64,8 +71,11 @@ export function createPresence({
 		const json = JSON.stringify(view);
 		if (!force && json === conn.last) return;
 		conn.last = json;
+		emit(conn, 'presence', view);
+	};
+	const emit = (conn: Connection, event: string, data: unknown) => {
 		try {
-			conn.send(view);
+			conn.send(event, data);
 		} catch {
 			// the stream is already closed: its disconnect is on its way
 		}
@@ -76,14 +86,10 @@ export function createPresence({
 
 	return {
 		/**
-		 * Register an open stream. `send` gets the first view at once; the returned function must be
-		 * called when the stream ends (it is safe to call twice).
+		 * Register an open stream. `send` gets the first `presence` view at once; the returned
+		 * function must be called when the stream ends (it is safe to call twice).
 		 */
-		connect(
-			member: PresenceMember,
-			send: (view: PresenceView) => void,
-			close: () => void = () => {}
-		): () => void {
+		connect(member: PresenceMember, send: Emit, close: () => void = () => {}): () => void {
 			const conn: Connection = { member, send, close, last: '' };
 			let entry = entries.get(member.key);
 			const arrived = !entry;
@@ -117,6 +123,14 @@ export function createPresence({
 					broadcast();
 				}, graceMs);
 			};
+		},
+
+		/** Send an event to every open stream of `to`. */
+		publish(to: Audience, event: string, data: unknown): void {
+			for (const conn of connections) {
+				const match = 'admins' in to ? conn.member.admin : conn.member.key === to.key;
+				if (match) emit(conn, event, data);
+			}
 		},
 
 		/** Keys of everyone online (including those inside the grace period), sorted. */

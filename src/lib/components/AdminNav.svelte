@@ -1,16 +1,21 @@
 <script lang="ts">
 	/** The sections of /admin: underline tabs on one hairline, Usuarios carrying the pending queue. */
+	import { live } from '#lib/chat/live.svelte.ts';
 	import { resolve } from '$app/paths';
 
 	let {
 		current,
 		pending = 0
-	}: { current: 'resumen' | 'lecturas' | 'usuarios' | 'conectados'; pending?: number } = $props();
+	}: {
+		current: 'resumen' | 'lecturas' | 'usuarios' | 'mensajes' | 'conectados';
+		pending?: number;
+	} = $props();
 
 	const SECTIONS = [
 		{ id: 'resumen', label: 'Resumen', href: resolve('/admin') },
 		{ id: 'lecturas', label: 'Lecturas', href: resolve('/admin/lecturas') },
 		{ id: 'usuarios', label: 'Usuarios', href: resolve('/admin/usuarios') },
+		{ id: 'mensajes', label: 'Mensajes', href: resolve('/admin/mensajes') },
 		{ id: 'conectados', label: 'Conectados', href: resolve('/admin/conectados') }
 	] as const;
 </script>
@@ -35,6 +40,12 @@
 						<span
 							class="min-w-5 flex-none rounded-full bg-ink px-1.5 text-center text-[12px] leading-5 text-on-ink tabular-nums"
 							>{pending}<span class="sr-only"> pendientes</span></span
+						>
+					{/if}
+					{#if section.id === 'mensajes' && live.unread > 0}
+						<span
+							class="min-w-5 flex-none rounded-full bg-ink px-1.5 text-center text-[12px] leading-5 text-on-ink tabular-nums"
+							>{live.unread}<span class="sr-only"> sin leer</span></span
 						>
 					{/if}
 				</a>

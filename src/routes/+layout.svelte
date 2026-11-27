@@ -3,7 +3,8 @@
 	import '@fontsource-variable/geist';
 	import './layout.css';
 	import favicon from '#lib/assets/favicon.svg';
-	import { connectPresence } from '#lib/chat/presence.svelte.ts';
+	import ChatWidget from '#lib/components/ChatWidget.svelte';
+	import { connectLive } from '#lib/chat/live.svelte.ts';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import type { LayoutProps } from './$types';
@@ -15,8 +16,10 @@
 
 	// One live channel for the whole visit (approved accounts only): who is online.
 	const live = $derived(data.user?.status === 'approved');
+	/** Readers (not admins: they answer from Administración → Mensajes) get the chat button. */
+	const chat = $derived(live && data.user?.kind === 'google' && data.user.role === 'user');
 	$effect(() => {
-		if (live) return connectPresence();
+		if (live) return connectLive();
 	});
 </script>
 
@@ -26,6 +29,10 @@
 </svelte:head>
 
 {@render children()}
+
+{#if chat}
+	<ChatWidget />
+{/if}
 
 {#if footer}
 	<footer class="mx-auto max-w-[1440px] px-4 pb-6 sm:px-8">

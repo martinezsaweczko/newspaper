@@ -69,6 +69,10 @@
 			conectado). No se guarda: desaparece 30 segundos después de cerrar la pestaña y no queda ningún
 			historial de conexiones.
 		</li>
+		<li>
+			<strong>Tus mensajes:</strong> si escribes a la administración desde el botón «Mensajes», guardamos
+			lo que escribes y lo que te responden, quién lo escribió, cuándo y si se ha leído.
+		</li>
 	</ul>
 
 	<h2>Para qué los usamos</h2>
@@ -87,6 +91,10 @@
 			avisa antes de registrarte y es el interés legítimo del responsable en conocer el uso de su
 			quiosco (artículo 6.1.f del RGPD). Puedes oponerte escribiendo a la dirección de contacto.
 		</li>
+		<li>
+			<strong>Responder tus mensajes</strong>: los usamos solo para atender lo que preguntas, que es
+			parte del servicio que pides (artículo 6.1.b del RGPD).
+		</li>
 	</ul>
 	<p>
 		No usamos tus datos para publicidad, no elaboramos perfiles comerciales y no tomamos decisiones
@@ -99,14 +107,16 @@
 		sin límite de tiempo, por decisión del responsable, para poder consultar el historial completo
 		del quiosco. Puedes pedir en cualquier momento que se borre tu cuenta o tu registro de lectura.
 		Para borrar tu cuenta, el administrador la elimina del quiosco y, con ella, todo tu historial de
-		lectura.
+		lectura. Los mensajes se borran solos a los 6 meses de enviarse, y antes si se elimina tu
+		cuenta.
 	</p>
 
 	<h2>Con quién los compartimos</h2>
 	<p>
 		Con nadie. No vendemos ni cedemos tus datos a terceros. Google interviene solo como proveedor
 		del inicio de sesión, con su propia política de privacidad. Los datos se guardan en el propio
-		servidor del responsable, y el registro de lectura solo lo ven quienes administran el quiosco.
+		servidor del responsable, y el registro de lectura y tus mensajes solo los ven quienes
+		administran el quiosco.
 	</p>
 
 	<h2>Cookies</h2>
