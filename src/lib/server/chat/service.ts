@@ -33,6 +33,18 @@ const ADMINS = { admins: true } as const;
 const warn = (what: string) => (err: unknown) =>
 	console.warn(`[chat] ${what}: ${(err as Error)?.message ?? err}`);
 
+/**
+ * Push live events, never failing the caller: the message or read mark is already stored, and a
+ * browser that misses an event catches up on its next load. A failure is logged at warn level.
+ */
+async function deliver(what: string, push: () => void | Promise<void>): Promise<void> {
+	try {
+		await push();
+	} catch (err) {
+		warn(what)(err);
+	}
+}
+
 /** Tell every admin how many reader messages are unread. */
 async function pushAdminUnread(): Promise<void> {
 	presence.publish(ADMINS, 'unread', { count: await unreadForAdmins(db()) });
@@ -65,11 +77,13 @@ export async function send(
 	if (!result.ok) return result;
 	const message = result.message;
 	recordChatMessage(message.direction);
-	presence.publish(readerKey(message.readerId), 'message', message);
-	presence.publish(ADMINS, 'message', message);
-	const unread =
-		message.direction === 'in' ? pushAdminUnread() : pushReaderUnread(message.readerId);
-	await unread.catch(warn('could not update the unread count'));
+	await deliver('could not deliver a message live', () => {
+		presence.publish(readerKey(message.readerId), 'message', message);
+		presence.publish(ADMINS, 'message', message);
+	});
+	await deliver('could not update the unread count', () =>
+		message.direction === 'in' ? pushAdminUnread() : pushReaderUnread(message.readerId)
+	);
 	return result;
 }
 
@@ -87,10 +101,12 @@ export async function markConversationRead(by: CurrentUser, readerId: number): P
 	const changed = await markRead(db(), readerId, direction);
 	if (changed === 0) return;
 	const read: ChatRead = { readerId, direction };
-	presence.publish(readerKey(readerId), 'read', read);
-	presence.publish(ADMINS, 'read', read);
-	await (direction === 'in' ? pushAdminUnread() : pushReaderUnread(readerId)).catch(
-		warn('could not update the unread count')
+	await deliver('could not deliver a read receipt live', () => {
+		presence.publish(readerKey(readerId), 'read', read);
+		presence.publish(ADMINS, 'read', read);
+	});
+	await deliver('could not update the unread count', () =>
+		direction === 'in' ? pushAdminUnread() : pushReaderUnread(readerId)
 	);
 }
 
