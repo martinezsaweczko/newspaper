@@ -4,6 +4,7 @@
  * chat messages and read receipts go to whoever subscribed with `onLive`. `EventSource`
  * reconnects by itself after a drop; until the first event the state is unknown (`admins` null).
  */
+import { armSound, playDrop } from './sound.svelte.ts';
 import type { ChatMessage, ChatRead } from './types.ts';
 
 class LiveState {
@@ -38,9 +39,14 @@ let users = 0;
 
 const parse = <T>(event: Event) => JSON.parse((event as MessageEvent<string>).data) as T;
 
-/** Open the shared stream (reference-counted); returns the function that releases it. */
-export function connectLive(url = '/chat/stream'): () => void {
+/**
+ * Open the shared stream (reference-counted); returns the function that releases it. `mine` is
+ * the viewer's own message direction (`in` for a reader, `out` for an admin): messages the other
+ * way play the drop.
+ */
+export function connectLive(mine: 'in' | 'out', url = '/chat/stream'): () => void {
 	users += 1;
+	armSound();
 	if (!source) {
 		source = new EventSource(url);
 		source.addEventListener('presence', (event) => {
@@ -50,6 +56,10 @@ export function connectLive(url = '/chat/stream'): () => void {
 		});
 		source.addEventListener('unread', (event) => {
 			live.unread = parse<{ count: number }>(event).count;
+		});
+		source.addEventListener('message', (event) => {
+			const message = parse<ChatMessage>(event);
+			if (message.direction !== mine) playDrop(message.id);
 		});
 		for (const name of ['message', 'read'] as const) {
 			source.addEventListener(name, (event) => {

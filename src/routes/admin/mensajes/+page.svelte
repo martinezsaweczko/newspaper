@@ -3,6 +3,7 @@
 	import ChatThread from '#lib/components/ChatThread.svelte';
 	import PresenceDot from '#lib/components/PresenceDot.svelte';
 	import SiteHeader from '#lib/components/SiteHeader.svelte';
+	import SoundToggle from '#lib/components/SoundToggle.svelte';
 	import { live, onLive } from '#lib/chat/live.svelte.ts';
 	import { MAX_MESSAGE_LENGTH } from '#lib/chat/types.ts';
 	import { formatMessageTime, isoFromLocalDate } from '#lib/format/date.ts';
@@ -54,13 +55,16 @@
 			class="flex flex-col gap-1 border-b border-ink py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-6"
 		>
 			<h1 class="font-serif text-[24px] leading-tight font-semibold sm:text-[30px]">Mensajes</h1>
-			<p class="text-[14px] text-ink-soft tabular-nums" aria-live="polite">
-				{live.unread === 0
-					? 'Todo leído'
-					: live.unread === 1
-						? '1 mensaje sin leer'
-						: `${live.unread} mensajes sin leer`}
-			</p>
+			<div class="flex items-center gap-3">
+				<p class="text-[14px] text-ink-soft tabular-nums" aria-live="polite">
+					{live.unread === 0
+						? 'Todo leído'
+						: live.unread === 1
+							? '1 mensaje sin leer'
+							: `${live.unread} mensajes sin leer`}
+				</p>
+				<SoundToggle label />
+			</div>
 		</div>
 
 		{#if data.missing}

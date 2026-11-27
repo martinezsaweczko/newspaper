@@ -155,7 +155,10 @@ See README.md for the product overview, configuration and deploy.
   (`?lector=<id>`, `depends('app:mensajes')`, reloaded on every `message`/`read` event; opening a
   conversation marks it read; the reply form posts to `?lector=<id>&/enviar` so the conversation
   stays open). Browser state lives in `#lib/chat/live.svelte.ts` (`live.admins`, `.online`,
-  `.unread`, `onLive('message' | 'read')`); bubbles in `ChatThread.svelte`.
+  `.unread`, `onLive('message' | 'read')`); bubbles in `ChatThread.svelte`. A message from the
+  other side plays a water drop (`#lib/chat/sound.svelte.ts`: Web Audio, synthesised, no file;
+  unlocked on the first click/key; one tab per message via a localStorage claim, the visible tab
+  first; muted per browser with `SoundToggle.svelte`, key `np:chat-sound`).
 - Observability: `src/instrumentation.server.ts` (loaded before the app, never by `vite build`)
   calls `startTelemetry(process.env)` in `src/lib/server/observability/` (state on globalThis so the
   dev server's re-imports start nothing twice). Traces: `tracing.server` in `vite.config.ts`; the

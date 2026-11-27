@@ -19,7 +19,7 @@
 	/** Readers (not admins: they answer from Administración → Mensajes) get the chat button. */
 	const chat = $derived(live && data.user?.kind === 'google' && data.user.role === 'user');
 	$effect(() => {
-		if (live) return connectLive();
+		if (live) return connectLive(data.user?.role === 'admin' ? 'out' : 'in');
 	});
 </script>
 

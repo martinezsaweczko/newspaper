@@ -259,7 +259,9 @@ unread count) that opens a conversation with the administration. Every admin see
 conversation (a shared inbox) at **Administración → Mensajes**, with an unread count in the header
 and the tab; any admin can answer, and an admin can start a conversation with any approved reader.
 Messages arrive live over the same stream; written while nobody is online, they wait (no email or
-other notification). A reader may send 10 messages a minute and 60 an hour; a message is at most
+other notification). A new message from the other side plays a short water-drop sound (made in
+the browser, one tab at a time; mute it with the speaker button, remembered per browser). A
+reader may send 10 messages a minute and 60 an hour; a message is at most
 2000 characters. Messages are stored in the `messages` table and **deleted after 6 months** (at
 start and once a day); deleting an account deletes its conversation.
 

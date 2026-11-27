@@ -97,6 +97,8 @@ Two faces, both self-hosted from npm (`@fontsource-variable/*`), no external req
   verá tu mensaje al volver", the thread, and a textarea with an ink "Enviar" (Enter sends,
   Shift+Enter breaks the line; the character count shows in the last 200). Escape closes it and
   returns focus to the pill.
+- `SoundToggle.svelte` — a 44px speaker button (`aria-pressed`) muting the new-message water drop:
+  icon only in the chat panel's header, with "Sonido activado / desactivado" on Mensajes.
 - `ChatThread.svelte` — bubbles: mine on the right in ink, theirs on the left on the shelf tone,
   10px radius, the author over the first of a run, the time under each (`09:05` today, else
   `dd/mm/yyyy HH:mm`), "· Visto" under my last one once read.

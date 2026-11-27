@@ -8,6 +8,7 @@
 	import { MAX_MESSAGE_LENGTH, type ChatMessage } from '#lib/chat/types.ts';
 	import ChatThread from './ChatThread.svelte';
 	import PresenceDot from './PresenceDot.svelte';
+	import SoundToggle from './SoundToggle.svelte';
 
 	let open = $state(false);
 	let messages: ChatMessage[] = $state([]);
@@ -141,12 +142,15 @@
 							: 'Desconectada: verá tu mensaje al volver'}
 				</p>
 			</div>
-			<button
-				type="button"
-				onclick={hide}
-				class="-mt-1 -mr-2 min-h-11 min-w-11 cursor-pointer rounded-[6px] text-[22px] leading-none text-ink hover:bg-shelf"
-				aria-label="Cerrar los mensajes">×</button
-			>
+			<div class="-mt-1 -mr-2 flex items-center">
+				<SoundToggle />
+				<button
+					type="button"
+					onclick={hide}
+					class="min-h-11 min-w-11 cursor-pointer rounded-[6px] text-[22px] leading-none text-ink hover:bg-shelf"
+					aria-label="Cerrar los mensajes">×</button
+				>
+			</div>
 		</header>
 
 		{#if failed}
