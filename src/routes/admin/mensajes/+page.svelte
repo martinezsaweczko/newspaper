@@ -75,7 +75,7 @@
 
 		<div class="mt-6 grid gap-8 lg:grid-cols-[minmax(280px,360px)_1fr]">
 			<!-- Conversations (on a phone, only when none is open) -->
-			<div class={[data.selected && 'max-lg:hidden']}>
+			<div class={['min-w-0', data.selected && 'max-lg:hidden']}>
 				<form method="GET" class="flex items-end gap-2">
 					<div class="flex flex-1 flex-col gap-1">
 						<label for="lector" class="text-[13px] text-ink-soft">Escribir a</label>
@@ -161,7 +161,7 @@
 			<!-- The open conversation -->
 			<section
 				class={[
-					'flex h-[min(680px,75dvh)] flex-col overflow-hidden rounded-[10px] border border-hairline bg-sheet',
+					'flex h-[min(680px,75dvh)] min-w-0 flex-col overflow-hidden rounded-[10px] border border-hairline bg-sheet',
 					!data.selected && 'max-lg:hidden'
 				]}
 				aria-label={data.selected ? `Conversación con ${data.selected.name}` : 'Conversación'}

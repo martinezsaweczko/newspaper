@@ -32,7 +32,11 @@
 						class="-my-2 flex min-h-11 items-center gap-2 rounded-[6px] px-2 underline-offset-4 hover:text-ink hover:underline"
 					>
 						<PresenceDot online={others > 0} />
-						<span class="tabular-nums"
+						<!-- A phone gets the short form; the long one stays for screen readers -->
+						<span class="whitespace-nowrap tabular-nums sm:hidden" aria-hidden="true"
+							>{others === 0 ? 'Nadie más' : `${others} en línea`}</span
+						>
+						<span class="whitespace-nowrap tabular-nums max-sm:sr-only"
 							>{others === 0
 								? 'Nadie más en línea'
 								: others === 1
@@ -49,7 +53,9 @@
 								class="min-w-5 rounded-full bg-ink px-1.5 text-center text-[12px] leading-5 text-on-ink tabular-nums"
 								>{live.unread}</span
 							>
-							{live.unread === 1 ? 'mensaje sin leer' : 'mensajes sin leer'}
+							<span class="whitespace-nowrap max-sm:sr-only"
+								>{live.unread === 1 ? 'mensaje sin leer' : 'mensajes sin leer'}</span
+							>
 						</a>
 					{/if}
 				{:else}
@@ -70,14 +76,14 @@
 				{#if reader && user.role === 'admin'}
 					<a
 						href={resolve('/admin')}
-						class="-my-2 flex min-h-11 items-center rounded-[6px] px-2 text-ink underline-offset-4 hover:underline"
+						class="-my-2 flex min-h-11 items-center rounded-[6px] px-2 whitespace-nowrap text-ink underline-offset-4 hover:underline"
 						>Administración</a
 					>
 				{/if}
 				<form method="POST" action="/logout">
 					<button
 						type="submit"
-						class="-my-2 min-h-11 cursor-pointer rounded-[6px] px-2 text-ink underline-offset-4 hover:underline"
+						class="-my-2 min-h-11 cursor-pointer rounded-[6px] px-2 whitespace-nowrap text-ink underline-offset-4 hover:underline"
 					>
 						Cerrar sesión
 					</button>
