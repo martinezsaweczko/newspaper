@@ -106,7 +106,7 @@ tables=$(sql 'SHOW TABLES') || fail "SHOW TABLES failed (see the error above)"
 tables=$(printf '%s\n' "$tables" | sort | tr '\n' ' ')
 echo "SHOW TABLES -> $tables"
 case "$tables" in
-*__drizzle_migrations*reading_events*users*) ;;
+*__drizzle_migrations*messages*reading_events*users*) ;;
 *) fail "the auto-migrate did not create the tables" ;;
 esac
 

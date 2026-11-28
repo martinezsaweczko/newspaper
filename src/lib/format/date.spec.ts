@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	formatDate,
 	formatDateTime,
+	formatMessageTime,
 	formatDateline,
 	formatLongDate,
 	formatShortDate,
@@ -63,5 +64,13 @@ describe('date and time of the reading log', () => {
 		expect(parseTypedDate('11/17/2026')).toBeNull();
 		expect(parseTypedDate('')).toBeNull();
 		expect(parseTypedDate(null)).toBeNull();
+	});
+});
+
+describe('formatMessageTime', () => {
+	it('shows only the time today, the full date and time otherwise', () => {
+		expect(formatMessageTime('2026-11-27T09:05', '2026-11-27')).toBe('09:05');
+		expect(formatMessageTime('2026-11-26T23:59', '2026-11-27')).toBe('26/11/2026 23:59');
+		expect(formatMessageTime('nonsense', '2026-11-27')).toBe('—');
 	});
 });

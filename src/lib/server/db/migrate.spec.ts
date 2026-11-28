@@ -11,7 +11,7 @@ afterAll(async () => {
 });
 
 describe('migrations (needs local MySQL)', () => {
-	it('create users and reading_events with their indexes, and re-run as a no-op', async (ctx) => {
+	it('create users, reading_events and messages with their indexes, and re-run as a no-op', async (ctx) => {
 		if (!t) return ctx.skip();
 		await runMigrations(t.db); // second run: nothing pending
 		const [tables] = await t.pool.query(
@@ -20,6 +20,7 @@ describe('migrations (needs local MySQL)', () => {
 		);
 		expect((tables as { name: string }[]).map((r) => r.name)).toEqual([
 			'__drizzle_migrations',
+			'messages',
 			'reading_events',
 			'users'
 		]);
@@ -36,8 +37,16 @@ describe('migrations (needs local MySQL)', () => {
 				'reading_events_user_created_idx'
 			])
 		);
+		const [chatIndexes] = await t.pool.query(
+			`SELECT DISTINCT index_name AS name FROM information_schema.statistics
+			 WHERE table_schema = ? AND table_name = 'messages' ORDER BY 1`,
+			[t.name]
+		);
+		expect((chatIndexes as { name: string }[]).map((r) => r.name)).toEqual(
+			expect.arrayContaining(['messages_created_idx', 'messages_reader_idx', 'messages_unread_idx'])
+		);
 		const [journal] = await t.pool.query('SELECT COUNT(*) AS n FROM __drizzle_migrations');
-		expect((journal as { n: number }[])[0].n).toBe(2);
+		expect((journal as { n: number }[])[0].n).toBe(3);
 	});
 });
 

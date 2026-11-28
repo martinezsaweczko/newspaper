@@ -128,6 +128,37 @@ See README.md for the product overview, configuration and deploy.
   canvases drawn only near the viewport and freed when they leave it; zoom keeps the reading
   position. Falls back to links to the browser viewer and the download if pdf.js fails. The first
   (no-Range) request still records the opening in the reading log.
+- Presence: `/chat/stream` is a Server-Sent Events endpoint (`chat/sse.ts`: retry hint, `: ping`
+  every 20 s, `check` re-resolves the session cookie via `sessionUser` before each ping and ends
+  the stream on a block, role change or sign-out everywhere). `chat/presence.ts` (pure, in memory,
+  one per process on globalThis) counts streams per `userLabel` key with a 30 s grace after the
+  last one; readers get `{admins}`, admins also `{online: keys[]}`, sent only on change. The root
+  layout opens one shared `EventSource` (`#lib/chat/presence.svelte.ts`) for approved accounts;
+  `SiteHeader` shows the dot (`PresenceDot.svelte`), `/admin/conectados` the list. Single replica
+  only. Not traced (`isLiveStream` in `tracing.ts`), not a page view; gauges
+  `newspaper_chat_connections`, `newspaper_users_online{role}`. On SIGTERM/SIGINT (not in dev) the
+  hook closes every stream so adapter-node's graceful shutdown does not wait for them.
+- Chat: `messages` table (`reader_id` = the conversation, always an approved `user`-role Google
+  account, ON DELETE CASCADE; `direction` `in`/`out`; the admin author as `sender_user_id` (SET
+  NULL) or `sender_local_username`; `read_at` per side). `chat/messages.ts` is pure over Drizzle
+  (`cleanBody` ≤2000 characters, `sendMessage`, `thread`, `markRead`, unread counts,
+  `conversations`, `purgeMessages` + `retentionCutoff`: 6 months, run by the `init` hook at start
+  and daily). `chat/service.ts` adds the rate limit (`rate.ts`: 10/min, 60/h per `userLabel`),
+  the `newspaper.chat.send` span (direction and result, never the text), the
+  `newspaper_chat_messages_total{direction}` counter and live delivery through
+  `presence.publish`: `message` to the reader's key and every admin, `unread {count}` to whoever's
+  count changed, `read {readerId, direction}` to both sides. The stream sends the starting
+  `unread` on connect. Shared inbox: every admin sees every conversation. Readers:
+  `ChatWidget.svelte` (root layout) with JSON endpoints `/chat/messages` (GET thread, POST
+  `{text}`) and `/chat/read`; they accept only `application/json` (`chat/http.ts`), so a
+  cross-site page needs a CORS preflight the app never grants. Admins: `/admin/mensajes`
+  (`?lector=<id>`, `depends('app:mensajes')`, reloaded on every `message`/`read` event; opening a
+  conversation marks it read; the reply form posts to `?lector=<id>&/enviar` so the conversation
+  stays open). Browser state lives in `#lib/chat/live.svelte.ts` (`live.admins`, `.online`,
+  `.unread`, `onLive('message' | 'read')`); bubbles in `ChatThread.svelte`. A message from the
+  other side plays a water drop (`#lib/chat/sound.svelte.ts`: Web Audio, synthesised, no file;
+  unlocked on the first click/key; one tab per message via a localStorage claim, the visible tab
+  first; muted per browser with `SoundToggle.svelte`, key `np:chat-sound`).
 - Observability: `src/instrumentation.server.ts` (loaded before the app, never by `vite build`)
   calls `startTelemetry(process.env)` in `src/lib/server/observability/` (state on globalThis so the
   dev server's re-imports start nothing twice). Traces: `tracing.server` in `vite.config.ts`; the

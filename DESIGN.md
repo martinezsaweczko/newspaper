@@ -42,6 +42,8 @@ Achromatic: no brand hue in the chrome. One ground, one ink, the ink as the prim
 | `--t-on-ink`   | `#fafafa`  | `#141312` | Text on an ink fill                                     |
 | `--t-signal`   | `#1d5fbf`  | `#7eaaf5` | The one hue: the focus ring                             |
 | `--t-error`    | `#a3201c`  | `#ff8c84` | Login error text                                        |
+| `--t-online`   | `#1e8449`  | `#5cc98a` | Presence dot: online                                    |
+| `--t-offline`  | `#b3261e`  | `#ff7a70` | Presence dot: offline                                   |
 | `--t-shadow`   | `20 18 12` | `0 0 0`   | RGB of the paper shadow                                 |
 | `--t-page-dim` | `1`        | `0.9`     | Brightness of front pages (dimmed a little in the dark) |
 
@@ -52,6 +54,9 @@ Rules:
 - Colour stays under 1% of the screen: the focus ring only. The front pages bring their own.
   One exception, from the app-screen rules: on `/admin` the main data element (the bars of
   "Periódicos más leídos") carries `--t-signal`; everything else on the dashboard stays ink.
+- Second exception: the presence dots (8-10px, green online / red offline) are status, not
+  decoration. They are never alone: the words next to them say the same ("Administración en
+  línea", "Desconectados"), so colour is not the only cue.
 - Dark mode follows `prefers-color-scheme`; front pages stay printed paper, slightly dimmed.
 - **Brand exception: the Google button.** `GoogleButton.svelte` follows Google's sign-in branding
   guidelines, which fix its colours, so they are taken as given rather than tuned to the stand:
@@ -86,6 +91,20 @@ Two faces, both self-hosted from npm (`@fontsource-variable/*`), no external req
 - `Nameplate.svelte` — the wordmark and its double rule (`stand` size on app pages, `cover` on login).
 - `SiteHeader.svelte` — skip link, "Private newsstand", the signed-in user, Administración (admins)
   and Sign out.
+- `ChatWidget.svelte` — readers only: a paper pill in the bottom-right corner ("Mensajes", the
+  dot, an ink unread pill) opening a 380px sheet (full width on a phone) with the soft
+  `.chat-panel` shadow: "Administración" in Newsreader with the dot and "En línea" / "Desconectada:
+  verá tu mensaje al volver", the thread, and a textarea with an ink "Enviar" (Enter sends,
+  Shift+Enter breaks the line; the character count shows in the last 200). Escape closes it and
+  returns focus to the pill.
+- `SoundToggle.svelte` — a 44px speaker button (`aria-pressed`) muting the new-message water drop:
+  icon only in the chat panel's header, with "Sonido activado / desactivado" on Mensajes.
+- `ChatThread.svelte` — bubbles: mine on the right in ink, theirs on the left on the shelf tone,
+  10px radius, the author over the first of a run, the time under each (`09:05` today, else
+  `dd/mm/yyyy HH:mm`), "· Visto" under my last one once read.
+- `PresenceDot.svelte` — the 8px (sm) or 10px (md) online/offline dot, `aria-hidden`, grey while
+  the stream has not answered. In `SiteHeader`, after "Quiosco privado": readers see "Administración
+  en línea / desconectada"; admins see "N personas más en línea", linking to Conectados.
 - `AccountNotice.svelte` — the page of an account that cannot read (pending, blocked).
 - `PrivacyNotice.svelte` — the reading-log notice in small print (`/login`, `/pendiente`), linking
   to `/privacidad`. Under it, and in a small hairline footer on signed-in pages, "Política de
@@ -97,8 +116,15 @@ Two faces, both self-hosted from npm (`@fontsource-variable/*`), no external req
 - `FrontPage.svelte` — the front page linking to the PDF, alt text
   `"Portada de <Masthead>, dd/mm/yyyy"`, masthead caption linking to the back issues. On a render
   failure it becomes a sheet with the masthead set in Newsreader and "Front page unavailable".
-- `AdminNav.svelte` — Resumen / Lecturas / Usuarios as underline tabs on one hairline; Usuarios
+- `AdminNav.svelte` — Resumen / Lecturas / Usuarios / Conectados as underline tabs on one hairline; Usuarios
   carries the pending count as an ink pill.
+- Mensajes (`/admin/mensajes`): conversations on the left ("Escribir a" select, then a list with
+  dot, name in semibold while unread, compact time, the last line and an ink unread pill), the open
+  conversation on the right as a sheet with its own header and reply box; on a phone, one at a
+  time with "‹ Conversaciones" back.
+- Conectados (`/admin/conectados`): "En línea" and "Desconectados" under region-style heads (3px
+  ink rule, serif `h2`, count on the right), rows of dot + name + email (or "Administrador local")
+  and an "Admin" outline tag or an "Escribir" link for readers; a note in small grey that it updates itself and keeps no history.
 - `ReadingTable.svelte` — the reading log rows (fecha y hora, lector, periódico, región, edición,
   tipo); a reader or newspaper links to the log filtered by it; below `md` each row folds into
   two lines under the reader.

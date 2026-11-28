@@ -14,14 +14,19 @@ import { consoleSpanExporter, privateExporter } from './span-privacy.ts';
 const createExporter = (name: TraceExporterName) =>
 	name === 'console' ? consoleSpanExporter() : new OTLPTraceExporter();
 
+/** `/chat/stream` (with or without a query string): the long-lived SSE channel. */
+export const isLiveStream = (url: string | undefined): boolean =>
+	url === '/chat/stream' || (url?.startsWith('/chat/stream?') ?? false);
+
 /** The incoming/outgoing HTTP spans. No `headersToSpanAttributes`: no request header is recorded. */
 export function httpInstrumentationConfig(
 	metricsPort: number | undefined
 ): HttpInstrumentationConfig {
 	return {
-		// Prometheus scrapes are not app traffic.
+		// Prometheus scrapes are not app traffic, and a live stream stays open for hours: as a span it
+		// would only hide the requests around it.
 		ignoreIncomingRequestHook: (req: IncomingMessage) =>
-			metricsPort !== undefined && req.socket.localPort === metricsPort
+			(metricsPort !== undefined && req.socket.localPort === metricsPort) || isLiveStream(req.url)
 	};
 }
 

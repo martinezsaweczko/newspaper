@@ -3,6 +3,8 @@
 	import '@fontsource-variable/geist';
 	import './layout.css';
 	import favicon from '#lib/assets/favicon.svg';
+	import ChatWidget from '#lib/components/ChatWidget.svelte';
+	import { connectLive } from '#lib/chat/live.svelte.ts';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import type { LayoutProps } from './$types';
@@ -11,6 +13,14 @@
 	// Pages that already link the legal texts in their own content (or are them).
 	const OWN_LINKS = new Set(['/login', '/pendiente', '/bloqueado', '/privacidad', '/condiciones']);
 	const footer = $derived(Boolean(data.user) && !OWN_LINKS.has(page.route.id ?? ''));
+
+	// One live channel for the whole visit (approved accounts only): who is online.
+	const live = $derived(data.user?.status === 'approved');
+	/** Readers (not admins: they answer from Administración → Mensajes) get the chat button. */
+	const chat = $derived(live && data.user?.kind === 'google' && data.user.role === 'user');
+	$effect(() => {
+		if (live) return connectLive(data.user?.role === 'admin' ? 'out' : 'in');
+	});
 </script>
 
 <svelte:head>
@@ -19,6 +29,10 @@
 </svelte:head>
 
 {@render children()}
+
+{#if chat}
+	<ChatWidget />
+{/if}
 
 {#if footer}
 	<footer class="mx-auto max-w-[1440px] px-4 pb-6 sm:px-8">
